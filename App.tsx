@@ -13,8 +13,11 @@ import { useLearningProgress } from './hooks/useLearningProgress';
 import { LearningProgressSummary } from './components/LearningProgressSummary';
 import { LearningPath } from './components/LearningPath';
 import { ReviewReminder } from './components/ReviewReminder';
+import { Login } from './components/Login';
+import { ArrowLeft, Send, Microphone, MicrophoneOff, Stop, Book, Settings, Logout, Information, Play, Edit, Light, CurrencyDollar } from '@carbon/icons-react';
 
 const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState<TeacherPersona>(TEACHER_PERSONAS[0]);
   const [hasStarted, setHasStarted] = useState(false);
   const [isKeyConfigured, setIsKeyConfigured] = useState(true);
@@ -23,6 +26,14 @@ const App: React.FC = () => {
   const [studyMode, setStudyMode] = useState<'voice' | 'text'>('voice');
   const [textInput, setTextInput] = useState('');
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  // Verificar autenticação ao carregar
+  useEffect(() => {
+    const auth = localStorage.getItem('fluentbuddy_auth');
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
   
   const { stats, isAssessing, runAssessment } = useProgressTracker();
   
@@ -94,9 +105,14 @@ const App: React.FC = () => {
     }
   };
 
+  // Verificar autenticação primeiro
+  if (!isAuthenticated) {
+    return <Login onLogin={() => setIsAuthenticated(true)} />;
+  }
+
   if (!hasStarted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         {showGuide && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl space-y-6">
@@ -104,16 +120,16 @@ const App: React.FC = () => {
               <div className="space-y-4 text-gray-600 text-sm">
                 <p>Para treinar para cargos de <strong>Manager</strong> com estabilidade, você precisa de uma API Key do Google.</p>
                 <ol className="list-decimal ml-4 space-y-2">
-                  <li>Crie uma chave em <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-600 underline font-bold">AI Studio</a>.</li>
+                  <li>Crie uma chave em <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-slate-700 underline font-bold">AI Studio</a>.</li>
                   <li>Ative o faturamento (Billing) no Google Cloud para evitar que a conexão caia.</li>
                   <li>Clique no botão abaixo para inserir sua chave no sistema.</li>
                 </ol>
-                <div className="bg-blue-50 p-4 rounded-xl text-blue-800 text-xs leading-relaxed">
+                <div className="bg-slate-50 p-4 rounded-xl text-slate-700 text-xs leading-relaxed">
                   <strong>Dica:</strong> Você pode usar aqui no PC mesmo. O "Deploy" serve para levar o app no celular para qualquer lugar.
                 </div>
               </div>
               <div className="flex flex-col space-y-3">
-                <button onClick={handleOpenKeySelector} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors">
+                <button onClick={handleOpenKeySelector} className="w-full bg-slate-700 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-colors">
                   Configurar Minha Chave
                 </button>
                 <button onClick={() => setShowGuide(false)} className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
@@ -125,36 +141,36 @@ const App: React.FC = () => {
         )}
 
         <div className="max-w-4xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
-          <div className="md:w-1/2 bg-blue-600 p-8 text-white flex flex-col justify-center">
+          <div className="md:w-1/2 bg-slate-700 p-8 text-white flex flex-col justify-center">
             <div className="mb-6 flex justify-between items-center">
-              <span className="bg-blue-400 bg-opacity-30 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+              <span className="bg-slate-600 bg-opacity-40 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">
                 Professional Tech English
               </span>
-              <button onClick={() => setShowGuide(true)} className="text-blue-200 hover:text-white transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <button onClick={() => setShowGuide(true)} className="text-slate-200 hover:text-white transition-colors">
+                <Information size={24} />
               </button>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">FluentBuddy</h1>
-            <p className="text-blue-100 text-lg mb-8 leading-relaxed">
+            <p className="text-slate-200 text-lg mb-8 leading-relaxed">
               Prepare-se para cargos internacionais de gestão com mentoria de voz em tempo real.
             </p>
             
             <div className="mt-8 space-y-4">
-               <div className="bg-blue-500 bg-opacity-20 border border-blue-400 border-opacity-30 rounded-2xl p-4">
+               <div className="bg-slate-600 bg-opacity-20 border border-slate-500 border-opacity-30 rounded-2xl p-4">
                  <div className="flex justify-between items-center mb-2">
                     <span className="text-xs font-bold opacity-80 uppercase tracking-tighter">Sua Evolução CEFR</span>
-                    <span className="bg-white text-blue-600 px-2 py-0.5 rounded-lg text-xs font-bold">{stats.level}</span>
+                    <span className="bg-white text-slate-700 px-2 py-0.5 rounded-lg text-xs font-bold">{stats.level}</span>
                  </div>
-                 <div className="h-2 w-full bg-blue-800 bg-opacity-40 rounded-full overflow-hidden">
+                 <div className="h-2 w-full bg-slate-800 bg-opacity-40 rounded-full overflow-hidden">
                     <div className="h-full bg-white rounded-full transition-all duration-1000" style={{ width: `${(stats.grammar + stats.vocabulary + stats.communication) / 3}%` }} />
                  </div>
                </div>
 
                {!isKeyConfigured && (
-                 <div className="bg-amber-400 bg-opacity-10 border border-amber-400 border-opacity-30 rounded-2xl p-4 text-xs">
-                   <p className="font-bold mb-1">💡 Upgrade para Management</p>
-                   <p className="opacity-80 mb-3 text-[11px]">O plano gratuito pode cair. Configure uma chave paga para sessões ilimitadas.</p>
-                   <button onClick={handleOpenKeySelector} className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all w-full">
+                 <div className="bg-slate-100 bg-opacity-80 border border-slate-300 rounded-2xl p-4 text-xs">
+                   <p className="font-bold mb-1 flex items-center gap-1 text-slate-900"><Light size={16} /> Upgrade para Management</p>
+                   <p className="text-slate-600 mb-3 text-[11px]">O plano gratuito pode cair. Configure uma chave paga para sessões ilimitadas.</p>
+                   <button onClick={handleOpenKeySelector} className="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-lg transition-all w-full">
                      Configurar Conta Paga
                    </button>
                  </div>
@@ -171,12 +187,12 @@ const App: React.FC = () => {
                   onClick={() => setSelectedPersona(persona)}
                   className={`w-full text-left p-4 rounded-2xl border-2 transition-all duration-200 flex items-center space-x-4 ${
                     selectedPersona.id === persona.id 
-                      ? 'border-blue-500 bg-blue-50 shadow-md' 
+                      ? 'border-slate-600 bg-slate-50 shadow-md' 
                       : 'border-gray-100 hover:border-gray-200'
                   }`}
                 >
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl ${
-                    persona.id === 'alex' ? 'bg-orange-400' : persona.id === 'sarah' ? 'bg-purple-400' : 'bg-indigo-600'
+                    persona.id === 'alex' ? 'bg-slate-600' : persona.id === 'sarah' ? 'bg-slate-700' : 'bg-slate-800'
                   }`}>
                     {persona.name[0]}
                   </div>
@@ -198,38 +214,39 @@ const App: React.FC = () => {
                   onClick={() => setStudyMode('voice')}
                   className={`flex-1 px-4 py-3 rounded-xl font-bold transition-all duration-200 flex items-center justify-center space-x-2 ${
                     studyMode === 'voice' 
-                      ? 'bg-white text-blue-600 shadow-md' 
+                      ? 'bg-white text-slate-700 shadow-md' 
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  <span className="text-xl">🎤</span>
+                  <Microphone size={20} />
                   <span>Voz</span>
                 </button>
                 <button
                   onClick={() => setStudyMode('text')}
                   className={`flex-1 px-4 py-3 rounded-xl font-bold transition-all duration-200 flex items-center justify-center space-x-2 ${
                     studyMode === 'text' 
-                      ? 'bg-white text-blue-600 shadow-md' 
+                      ? 'bg-white text-slate-700 shadow-md' 
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  <span className="text-xl">✍️</span>
+                  <Edit size={20} />
                   <span>Texto</span>
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-2 text-center">
+              <p className="text-xs text-gray-500 mt-2 text-center flex items-center justify-center gap-1">
+                <CurrencyDollar size={14} />
                 {studyMode === 'voice' 
-                  ? '💰 Modo completo com áudio (mais caro)' 
-                  : '💸 Modo silencioso, apenas texto (mais barato)'}
+                  ? 'Modo completo com áudio (mais caro)' 
+                  : 'Modo silencioso, apenas texto (mais barato)'}
               </p>
             </div>
             
             <button 
               onClick={handleStart}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg transform active:scale-95 transition-all duration-200 flex items-center justify-center space-x-2"
+              className="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg transform active:scale-95 transition-all duration-200 flex items-center justify-center space-x-2"
             >
               <span>{isKeyConfigured ? 'Começar Sessão' : 'Configurar para Começar'}</span>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+              <ArrowLeft size={20} className="rotate-180" />
             </button>
           </div>
         </div>
@@ -247,13 +264,23 @@ const App: React.FC = () => {
               onClick={handleBack}
               className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+              <ArrowLeft size={24} />
             </button>
             <div>
               <h2 className="font-bold text-gray-900">Requisitos de Aprendizado</h2>
               <p className="text-xs text-gray-500">Nível {stats.level}</p>
             </div>
           </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem('fluentbuddy_auth');
+              setIsAuthenticated(false);
+            }}
+            className="text-sm text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1.5"
+          >
+            <Logout size={18} />
+            <span>Sair</span>
+          </button>
         </header>
         <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6">
           <LearningPath currentLevel={stats.level} />
@@ -270,15 +297,15 @@ const App: React.FC = () => {
             onClick={handleBack}
             className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+            <ArrowLeft size={24} />
           </button>
           <div>
             <h2 className="font-bold text-gray-900 flex items-center">
               Coaching: {selectedPersona.name}
               <span className={`ml-3 w-2 h-2 rounded-full ${status === ConnectionStatus.CONNECTED ? 'bg-green-500 animate-pulse' : status === ConnectionStatus.ERROR ? 'bg-red-500' : 'bg-yellow-500 animate-pulse'}`} />
             </h2>
-            <p className="text-xs text-gray-500">
-              {studyMode === 'voice' ? '🎤 Modo Voz' : '✍️ Modo Texto'} &bull; {stats.level}
+            <p className="text-xs text-gray-500 flex items-center gap-1">
+              {studyMode === 'voice' ? <><Microphone size={12} /> Modo Voz</> : <><Edit size={12} /> Modo Texto</>} &bull; {stats.level}
             </p>
           </div>
         </div>
@@ -286,12 +313,24 @@ const App: React.FC = () => {
         <div className="flex items-center space-x-2">
            <button 
              onClick={() => setShowLearningPath(true)}
-             className="hidden md:flex items-center px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full text-[10px] font-bold transition-colors"
+             className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full text-[10px] font-bold transition-colors"
            >
-            📚 REQUISITOS
+            <Book size={14} />
+            REQUISITOS
           </button>
-           <button onClick={handleOpenKeySelector} className="hidden md:flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-[10px] font-bold transition-colors">
-            CONFIGURAR CHAVE
+           <button onClick={handleOpenKeySelector} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-[10px] font-bold transition-colors">
+            <Settings size={14} />
+            CONFIGURAR
+          </button>
+          <button
+            onClick={() => {
+              localStorage.removeItem('fluentbuddy_auth');
+              setIsAuthenticated(false);
+            }}
+            className="text-sm text-gray-500 hover:text-red-600 transition-colors px-3 py-1.5"
+            title="Sair"
+          >
+            <Logout size={18} />
           </button>
         </div>
       </header>
@@ -322,7 +361,7 @@ const App: React.FC = () => {
              <div className={`w-24 h-24 rounded-full flex items-center justify-center text-white font-bold text-3xl shadow-xl transition-transform duration-500 ${
                status === ConnectionStatus.CONNECTED ? 'scale-110' : 'scale-100'
              } ${
-                selectedPersona.id === 'alex' ? 'bg-orange-400' : selectedPersona.id === 'sarah' ? 'bg-purple-400' : 'bg-indigo-600'
+                selectedPersona.id === 'alex' ? 'bg-slate-600' : selectedPersona.id === 'sarah' ? 'bg-slate-700' : 'bg-slate-800'
               }`}>
                 {selectedPersona.name[0]}
               </div>
@@ -383,11 +422,9 @@ const App: React.FC = () => {
               <button
                 type="submit"
                 disabled={!textInput.trim() || status === ConnectionStatus.ERROR}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold transition-colors flex items-center space-x-2"
+                className="bg-slate-700 hover:bg-slate-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold transition-colors flex items-center space-x-2"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
+                <Send size={20} />
                 <span>Enviar</span>
               </button>
             </form>
@@ -401,11 +438,7 @@ const App: React.FC = () => {
                 isMuted ? 'bg-red-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
               }`}
             >
-              {isMuted ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z M1 1l22 22" /></svg>
-              ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-              )}
+              {isMuted ? <MicrophoneOff size={24} /> : <Microphone size={24} />}
             </button>
 
             {status === ConnectionStatus.CONNECTED ? (
@@ -413,7 +446,7 @@ const App: React.FC = () => {
                 <button 
                   onClick={handleAnalyzeLast}
                   disabled={isAnalyzing || transcriptions.filter(t => t.role === 'user').length === 0}
-                  className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-2xl font-bold shadow-xl flex items-center space-x-2 transition-all transform hover:scale-105 disabled:opacity-50"
+                  className="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-2xl font-bold shadow-xl flex items-center space-x-2 transition-all transform hover:scale-105 disabled:opacity-50"
                 >
                   <span className="text-sm">Avaliar Fala</span>
                 </button>
@@ -428,7 +461,7 @@ const App: React.FC = () => {
             ) : (
               <button 
                 onClick={startSession}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-bold shadow-2xl transition-all"
+                className="bg-slate-700 hover:bg-slate-800 text-white px-8 py-4 rounded-2xl font-bold shadow-2xl transition-all"
               >
                 Reconectar Mentor
               </button>

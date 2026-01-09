@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { UserStats } from '../types';
+import { Renew, Money } from '@carbon/icons-react';
 
 interface EvolutionDashboardProps {
   stats: UserStats;
@@ -9,9 +10,9 @@ interface EvolutionDashboardProps {
 
 const EvolutionDashboard: React.FC<EvolutionDashboardProps> = ({ stats, isAssessing }) => {
   const getLevelColor = (level: string) => {
-    if (level.startsWith('A')) return 'bg-blue-500';
-    if (level.startsWith('B')) return 'bg-green-600';
-    return 'bg-amber-500';
+    if (level.startsWith('A')) return 'bg-slate-600';
+    if (level.startsWith('B')) return 'bg-slate-700';
+    return 'bg-slate-800';
   };
 
   const ProgressBar = ({ label, value, color }: { label: string, value: number, color: string }) => (
@@ -33,10 +34,8 @@ const EvolutionDashboard: React.FC<EvolutionDashboardProps> = ({ stats, isAssess
     <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6 relative overflow-hidden">
       {isAssessing && (
         <div className="absolute inset-0 bg-white bg-opacity-60 flex items-center justify-center z-10 backdrop-blur-[1px]">
-          <div className="flex items-center space-x-2 text-blue-600 font-bold text-xs animate-pulse">
-            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
+          <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs animate-pulse">
+            <Renew size={16} className="animate-spin" />
             <span>Analisando Performance...</span>
           </div>
         </div>
@@ -53,16 +52,16 @@ const EvolutionDashboard: React.FC<EvolutionDashboardProps> = ({ stats, isAssess
             {stats.level.startsWith('A') ? 'Basic User' : stats.level.startsWith('B') ? 'Independent User' : 'Proficient User'}
           </span>
           <div className="flex items-center mt-1 text-[9px] text-gray-400 font-medium">
-            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <Money size={12} className="mr-1" />
             Uso: Est. Low Cost
           </div>
         </div>
       </div>
 
       <div className="flex-1 w-full grid grid-cols-3 gap-4">
-        <ProgressBar label="Grammar" value={stats.grammar} color="bg-indigo-500" />
-        <ProgressBar label="Vocabulary" value={stats.vocabulary} color="bg-emerald-500" />
-        <ProgressBar label="Communication" value={stats.communication} color="bg-rose-500" />
+        <ProgressBar label="Grammar" value={stats.grammar} color="bg-slate-600" />
+        <ProgressBar label="Vocabulary" value={stats.vocabulary} color="bg-slate-700" />
+        <ProgressBar label="Communication" value={stats.communication} color="bg-slate-800" />
       </div>
     </div>
   );

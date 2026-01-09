@@ -33,7 +33,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ entries }) => {
             <div 
               className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
                 entry.role === 'user' 
-                  ? 'bg-blue-600 text-white rounded-tr-none' 
+                  ? 'bg-slate-700 text-white rounded-tr-none' 
                   : 'bg-gray-100 text-gray-800 rounded-tl-none border border-gray-200'
               }`}
             >

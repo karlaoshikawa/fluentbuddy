@@ -2,6 +2,7 @@ import React from 'react';
 import { useLearningProgress } from '../hooks/useLearningProgress';
 import { CEFRLevel } from '../types';
 import { CATEGORY_NAMES } from '../data';
+import { Book, CenterCircle, Renew, Chat, Edit, VolumeUp, Document } from '@carbon/icons-react';
 
 interface LearningProgressSummaryProps {
   currentLevel: CEFRLevel;
@@ -18,7 +19,7 @@ export function LearningProgressSummary({ currentLevel, onViewDetails }: Learnin
   return (
     <div className="learning-progress-summary">
       <div className="summary-header">
-        <h3>📚 Seu Progresso de Aprendizado</h3>
+        <h3 className="flex items-center gap-2"><Book size={20} /> Seu Progresso de Aprendizado</h3>
         {onViewDetails && (
           <button onClick={onViewDetails} className="view-details-btn">
             Ver Detalhes →
@@ -29,7 +30,7 @@ export function LearningProgressSummary({ currentLevel, onViewDetails }: Learnin
       {nextRequirement && (
         <div className="next-up">
           <div className="next-up-header">
-            <span className="next-icon">🎯</span>
+            <span className="next-icon"><CenterCircle size={18} /></span>
             <strong>Próximo na Fila:</strong>
           </div>
           <p className="next-requirement">{nextRequirement.name}</p>
@@ -43,12 +44,12 @@ export function LearningProgressSummary({ currentLevel, onViewDetails }: Learnin
           return (
             <div key={category} className="category-card">
               <div className="category-icon">
-                {category === 'vocabulary' && '📖'}
-                {category === 'grammar' && '📝'}
-                {category === 'verbs' && '🔄'}
-                {category === 'speaking' && '🗣️'}
-                {category === 'writing' && '✍️'}
-                {category === 'pronunciation' && '🎵'}
+                {category === 'vocabulary' && <Book size={20} />}
+                {category === 'grammar' && <Document size={20} />}
+                {category === 'verbs' && <Renew size={20} />}
+                {category === 'speaking' && <Chat size={20} />}
+                {category === 'writing' && <Edit size={20} />}
+                {category === 'pronunciation' && <VolumeUp size={20} />}
               </div>
               <div className="category-info">
                 <h4>{CATEGORY_NAMES[category]}</h4>
@@ -90,7 +91,7 @@ export function LearningProgressSummary({ currentLevel, onViewDetails }: Learnin
 
         .view-details-btn {
           padding: 8px 16px;
-          background: #667eea;
+          background: #475569;
           color: white;
           border: none;
           border-radius: 6px;
@@ -100,14 +101,15 @@ export function LearningProgressSummary({ currentLevel, onViewDetails }: Learnin
         }
 
         .view-details-btn:hover {
-          background: #5568d3;
+          background: #334155;
         }
 
         .next-up {
-          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
           padding: 15px;
           border-radius: 8px;
           margin-bottom: 20px;
+          border: 1px solid #e2e8f0;
         }
 
         .next-up-header {
@@ -122,20 +124,20 @@ export function LearningProgressSummary({ currentLevel, onViewDetails }: Learnin
         }
 
         .next-up-header strong {
-          color: #92400e;
+          color: #334155;
         }
 
         .next-requirement {
           margin: 5px 0;
           font-size: 16px;
           font-weight: 600;
-          color: #78350f;
+          color: #1e293b;
         }
 
         .next-description {
           margin: 5px 0 0 0;
           font-size: 14px;
-          color: #92400e;
+          color: #64748b;
           opacity: 0.9;
         }
 
@@ -185,7 +187,7 @@ export function LearningProgressSummary({ currentLevel, onViewDetails }: Learnin
 
         .mini-progress-fill {
           height: 100%;
-          background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(90deg, #475569 0%, #334155 100%);
           transition: width 0.3s ease;
         }
 

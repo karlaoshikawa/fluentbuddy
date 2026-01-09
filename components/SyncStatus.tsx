@@ -1,4 +1,5 @@
 import React from 'react';
+import { Renew, Cloud, Save } from '@carbon/icons-react';
 
 interface SyncStatusProps {
   isCloudEnabled: boolean;
@@ -10,7 +11,7 @@ export function SyncStatus({ isCloudEnabled, isSyncing, lastSyncTime }: SyncStat
   if (!isCloudEnabled) {
     return (
       <div className="sync-status offline">
-        <span className="sync-icon">💾</span>
+        <span className="sync-icon"><Save size={16} /></span>
         <div className="sync-text-container">
           <span className="sync-text">Modo Local</span>
           <span className="sync-subtext">Seu progresso está salvo neste navegador</span>
@@ -55,7 +56,7 @@ export function SyncStatus({ isCloudEnabled, isSyncing, lastSyncTime }: SyncStat
   return (
     <div className={`sync-status ${isSyncing ? 'syncing' : 'synced'}`}>
       <span className="sync-icon">
-        {isSyncing ? '🔄' : '☁️'}
+        {isSyncing ? <Renew size={16} className="animate-spin" /> : <Cloud size={16} />}
       </span>
       <span className="sync-text">
         {isSyncing ? 'Sincronizando...' : 'Sincronizado'}

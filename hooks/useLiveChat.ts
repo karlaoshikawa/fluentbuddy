@@ -94,9 +94,9 @@ export function useLiveChat(
               }
 
               if (message.serverContent?.turnComplete) {
-                if (currentInputText.current || currentOutputText.current) {
+                if (currentOutputText.current) {
                   const newEntries: TranscriptionEntry[] = [];
-                  if (currentInputText.current) newEntries.push({ role: 'user', text: currentInputText.current, timestamp: new Date() });
+                  // Não adicionar currentInputText aqui pois já foi adicionado em sendTextMessage
                   if (currentOutputText.current) newEntries.push({ role: 'teacher', text: currentOutputText.current, timestamp: new Date() });
                   
                   setTranscriptions(prev => {
@@ -104,7 +104,6 @@ export function useLiveChat(
                     if (onTurnComplete) onTurnComplete(updated);
                     return updated;
                   });
-                  currentInputText.current = '';
                   currentOutputText.current = '';
                 }
               }

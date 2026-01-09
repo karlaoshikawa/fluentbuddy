@@ -14,7 +14,7 @@ const Visualizer: React.FC<VisualizerProps> = ({ isActive, status }) => {
           key={i}
           className={`w-1.5 rounded-full transition-all duration-300 ${
             isActive 
-              ? 'bg-blue-500 wave-animation' 
+              ? 'bg-slate-600 wave-animation' 
               : 'bg-gray-300 h-2'
           }`}
           style={{
