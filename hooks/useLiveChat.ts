@@ -5,7 +5,13 @@ import { ConnectionStatus, TranscriptionEntry, TeacherPersona, CEFRLevel } from 
 import { decode, encode, decodeAudioData } from '../utils/audioUtils';
 import { SYSTEM_INSTRUCTION } from '../constants';
 
-export function useLiveChat(persona: TeacherPersona, userLevel: CEFRLevel = 'B1', onTurnComplete?: (entries: TranscriptionEntry[]) => void) {
+export function useLiveChat(
+  persona: TeacherPersona, 
+  userLevel: CEFRLevel = 'B1', 
+  onTurnComplete?: (entries: TranscriptionEntry[]) => void,
+  learningContext?: string,
+  enableAudio: boolean = true
+) {
   const [status, setStatus] = useState<ConnectionStatus>(ConnectionStatus.DISCONNECTED);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [transcriptions, setTranscriptions] = useState<TranscriptionEntry[]>([]);
@@ -61,6 +67,67 @@ export function useLiveChat(persona: TeacherPersona, userLevel: CEFRLevel = 'B1'
       setStatus(ConnectionStatus.CONNECTING);
       setErrorMsg(null);
 
+      console.log('🔧 Starting session with enableAudio:', enableAudio);
+
+      // Importante: criar a instância do SDK exatamente antes de conectar para pegar a API_KEY atualizada do process.env
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+      // No modo texto, usar modelo mais barato (billing configurado)
+      if (!enableAudio) {
+        console.log('✍️ TEXT MODE ACTIVATED - Modelo econômico (gemini-2.0-flash-exp)');
+        const sessionPromise = ai.live.connect({
+          model: 'gemini-2.0-flash-exp',
+          config: {
+            responseModalities: [Modality.TEXT],
+            systemInstruction: SYSTEM_INSTRUCTION(persona, userLevel, learningContext),
+          },
+          callbacks: {
+            onopen: () => {
+              console.log('Gemini Live session opened (TEXT MODE)');
+              setStatus(ConnectionStatus.CONNECTED);
+            },
+            onmessage: async (message: LiveServerMessage) => {
+              // Captura apenas texto
+              const textResponse = message.serverContent?.modelTurn?.parts?.find((p: any) => p.text);
+              if (textResponse?.text) {
+                currentOutputText.current += textResponse.text;
+              }
+
+              if (message.serverContent?.turnComplete) {
+                if (currentInputText.current || currentOutputText.current) {
+                  const newEntries: TranscriptionEntry[] = [];
+                  if (currentInputText.current) newEntries.push({ role: 'user', text: currentInputText.current, timestamp: new Date() });
+                  if (currentOutputText.current) newEntries.push({ role: 'teacher', text: currentOutputText.current, timestamp: new Date() });
+                  
+                  setTranscriptions(prev => {
+                    const updated = [...prev, ...newEntries];
+                    if (onTurnComplete) onTurnComplete(updated);
+                    return updated;
+                  });
+                  currentInputText.current = '';
+                  currentOutputText.current = '';
+                }
+              }
+            },
+            onerror: (e: any) => {
+              console.error('❌ Live API Error:', e);
+              setErrorMsg(e?.message || 'Erro na sessão ao vivo. Verifique seu faturamento.');
+              setStatus(ConnectionStatus.ERROR);
+              stopSession();
+            },
+            onclose: (e) => {
+              console.warn('🔌 Sessão fechada:', e);
+              setStatus(ConnectionStatus.DISCONNECTED);
+            }
+          }
+        });
+
+        sessionPromiseRef.current = sessionPromise;
+        return;
+      }
+
+      // Modo VOZ - Só inicializar áudio se estiver habilitado
+      console.log('🎤 VOICE MODE ACTIVATED - Audio will be used');
       const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext);
       inputAudioCtxRef.current = new AudioCtx({ sampleRate: 16000 });
       outputAudioCtxRef.current = new AudioCtx({ sampleRate: 24000 });
@@ -72,9 +139,6 @@ export function useLiveChat(persona: TeacherPersona, userLevel: CEFRLevel = 'B1'
       
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStreamRef.current = stream;
-
-      // Importante: criar a instância do SDK exatamente antes de conectar para pegar a API_KEY atualizada do process.env
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
@@ -83,13 +147,13 @@ export function useLiveChat(persona: TeacherPersona, userLevel: CEFRLevel = 'B1'
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: persona.voice as any } },
           },
-          systemInstruction: SYSTEM_INSTRUCTION(persona, userLevel),
+          systemInstruction: SYSTEM_INSTRUCTION(persona, userLevel, learningContext),
           inputAudioTranscription: {},
           outputAudioTranscription: {},
         },
         callbacks: {
           onopen: () => {
-            console.log('Gemini Live session opened');
+            console.log('Gemini Live session opened (VOICE MODE)');
             setStatus(ConnectionStatus.CONNECTED);
             
             if (!inputAudioCtxRef.current || !micStreamRef.current) return;
@@ -170,11 +234,58 @@ export function useLiveChat(persona: TeacherPersona, userLevel: CEFRLevel = 'B1'
       setErrorMsg(err?.message || 'Falha ao iniciar. Verifique sua conta.');
       setStatus(ConnectionStatus.ERROR);
     }
-  }, [persona, isMuted, userLevel, stopSession, onTurnComplete]);
+  }, [persona, isMuted, userLevel, stopSession, onTurnComplete, learningContext, enableAudio]);
 
   useEffect(() => {
     return () => stopSession();
   }, []);
+
+  const sendTextMessage = useCallback(async (text: string) => {
+    if (!sessionPromiseRef.current || !text.trim()) {
+      console.warn('⚠️ Sessão não disponível ou texto vazio');
+      return;
+    }
+    
+    // Verificar se o status está conectado
+    if (status !== ConnectionStatus.CONNECTED) {
+      console.warn('⚠️ Sessão não está conectada. Status atual:', status);
+      return;
+    }
+    
+    try {
+      const session = await sessionPromiseRef.current;
+      
+      // Verifica se a sessão ainda está ativa
+      if (!session) {
+        console.error('❌ Sessão não está disponível');
+        setStatus(ConnectionStatus.DISCONNECTED);
+        return;
+      }
+      
+      // Adiciona mensagem do usuário imediatamente
+      const userEntry: TranscriptionEntry = { 
+        role: 'user', 
+        text: text.trim(), 
+        timestamp: new Date() 
+      };
+      setTranscriptions(prev => [...prev, userEntry]);
+      currentInputText.current = text.trim();
+      
+      console.log('📤 Enviando texto para Gemini:', text.trim());
+      
+      // Envia como texto ao Gemini
+      await session.sendRealtimeInput({ text: text.trim() });
+      console.log('✅ Texto enviado com sucesso');
+    } catch (error) {
+      console.error('❌ Erro ao enviar texto:', error);
+      // Se der erro de WebSocket fechado, avisar o usuário
+      if (error instanceof Error && error.message.includes('CLOSING or CLOSED')) {
+        console.log('⚠️ Conexão foi fechada. Por favor, inicie uma nova sessão.');
+        setStatus(ConnectionStatus.DISCONNECTED);
+        setErrorMsg('Conexão perdida. Clique em "Começar Sessão" novamente.');
+      }
+    }
+  }, [status]);
 
   return {
     status,
@@ -183,6 +294,7 @@ export function useLiveChat(persona: TeacherPersona, userLevel: CEFRLevel = 'B1'
     isMuted,
     setIsMuted,
     startSession,
-    stopSession
+    stopSession,
+    sendTextMessage
   };
 }

@@ -42,3 +42,20 @@ export interface AnalysisResult {
   tips: PronunciationTip[];
   overallAdvice: string;
 }
+
+export interface UserProgress {
+  currentLevel: CEFRLevel;
+  completedRequirements: string[]; // IDs of completed requirements
+  lastUpdated: Date;
+  notes: Record<string, string>; // requirement ID -> user notes
+  reviewSchedule: Record<string, ReviewItem>; // requirement ID -> review data
+}
+
+export interface ReviewItem {
+  requirementId: string;
+  lastReviewed: Date;
+  nextReview: Date;
+  interval: number; // days until next review
+  easeFactor: number; // 1.3 to 2.5+ (how easy to remember)
+  repetitions: number; // number of successful reviews
+}

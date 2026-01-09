@@ -9,15 +9,33 @@ import { usePronunciationAnalysis } from './hooks/usePronunciationAnalysis';
 import PronunciationPanel from './components/PronunciationPanel';
 import EvolutionDashboard from './components/EvolutionDashboard';
 import { useProgressTracker } from './hooks/useProgressTracker';
+import { useLearningProgress } from './hooks/useLearningProgress';
+import { LearningProgressSummary } from './components/LearningProgressSummary';
+import { LearningPath } from './components/LearningPath';
+import { ReviewReminder } from './components/ReviewReminder';
 
 const App: React.FC = () => {
   const [selectedPersona, setSelectedPersona] = useState<TeacherPersona>(TEACHER_PERSONAS[0]);
   const [hasStarted, setHasStarted] = useState(false);
   const [isKeyConfigured, setIsKeyConfigured] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
+  const [showLearningPath, setShowLearningPath] = useState(false);
+  const [studyMode, setStudyMode] = useState<'voice' | 'text'>('voice');
+  const [textInput, setTextInput] = useState('');
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   
   const { stats, isAssessing, runAssessment } = useProgressTracker();
+  
+  // Sistema de acompanhamento de requisitos de aprendizado
+  const { 
+    getAIContext, 
+    getItemsDueForReview, 
+    getUpcomingReviews 
+  } = useLearningProgress(stats.level);
+  const learningContext = getAIContext();
+  
+  const dueForReview = getItemsDueForReview();
+  const upcomingReviews = getUpcomingReviews(7);
 
   const { 
     status, 
@@ -26,8 +44,9 @@ const App: React.FC = () => {
     isMuted, 
     setIsMuted, 
     startSession, 
-    stopSession 
-  } = useLiveChat(selectedPersona, stats.level, runAssessment);
+    stopSession,
+    sendTextMessage
+  } = useLiveChat(selectedPersona, stats.level, runAssessment, learningContext, studyMode === 'voice');
 
   const { analyze, isAnalyzing, result, clear } = usePronunciationAnalysis();
 
@@ -53,14 +72,19 @@ const App: React.FC = () => {
       setShowGuide(true);
       return;
     }
+    console.log('🚀 Starting session with studyMode:', studyMode);
     setHasStarted(true);
     await startSession();
   };
 
   const handleBack = () => {
-    stopSession();
-    clear();
-    setHasStarted(false);
+    if (showLearningPath) {
+      setShowLearningPath(false);
+    } else {
+      stopSession();
+      clear();
+      setHasStarted(false);
+    }
   };
 
   const handleAnalyzeLast = () => {
@@ -166,16 +190,74 @@ const App: React.FC = () => {
                 </button>
               ))}
             </div>
+
+            <div className="mt-6 mb-4">
+              <label className="block text-sm font-bold text-gray-700 mb-3">Modo de Estudo:</label>
+              <div className="flex items-center bg-gray-100 rounded-2xl p-1.5">
+                <button
+                  onClick={() => setStudyMode('voice')}
+                  className={`flex-1 px-4 py-3 rounded-xl font-bold transition-all duration-200 flex items-center justify-center space-x-2 ${
+                    studyMode === 'voice' 
+                      ? 'bg-white text-blue-600 shadow-md' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <span className="text-xl">🎤</span>
+                  <span>Voz</span>
+                </button>
+                <button
+                  onClick={() => setStudyMode('text')}
+                  className={`flex-1 px-4 py-3 rounded-xl font-bold transition-all duration-200 flex items-center justify-center space-x-2 ${
+                    studyMode === 'text' 
+                      ? 'bg-white text-blue-600 shadow-md' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <span className="text-xl">✍️</span>
+                  <span>Texto</span>
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                {studyMode === 'voice' 
+                  ? '💰 Modo completo com áudio (mais caro)' 
+                  : '💸 Modo silencioso, apenas texto (mais barato)'}
+              </p>
+            </div>
             
             <button 
               onClick={handleStart}
-              className="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg transform active:scale-95 transition-all duration-200 flex items-center justify-center space-x-2"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg transform active:scale-95 transition-all duration-200 flex items-center justify-center space-x-2"
             >
               <span>{isKeyConfigured ? 'Começar Sessão' : 'Configurar para Começar'}</span>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
             </button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Renderizar LearningPath se estiver ativo
+  if (hasStarted && showLearningPath) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={handleBack}
+              className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <div>
+              <h2 className="font-bold text-gray-900">Requisitos de Aprendizado</h2>
+              <p className="text-xs text-gray-500">Nível {stats.level}</p>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6">
+          <LearningPath currentLevel={stats.level} />
+        </main>
       </div>
     );
   }
@@ -196,12 +278,18 @@ const App: React.FC = () => {
               <span className={`ml-3 w-2 h-2 rounded-full ${status === ConnectionStatus.CONNECTED ? 'bg-green-500 animate-pulse' : status === ConnectionStatus.ERROR ? 'bg-red-500' : 'bg-yellow-500 animate-pulse'}`} />
             </h2>
             <p className="text-xs text-gray-500">
-              Modo Profissional Ativo &bull; {stats.level}
+              {studyMode === 'voice' ? '🎤 Modo Voz' : '✍️ Modo Texto'} &bull; {stats.level}
             </p>
           </div>
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
+           <button 
+             onClick={() => setShowLearningPath(true)}
+             className="hidden md:flex items-center px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full text-[10px] font-bold transition-colors"
+           >
+            📚 REQUISITOS
+          </button>
            <button onClick={handleOpenKeySelector} className="hidden md:flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-[10px] font-bold transition-colors">
             CONFIGURAR CHAVE
           </button>
@@ -210,6 +298,17 @@ const App: React.FC = () => {
 
       <main className="flex-1 flex flex-col max-w-4xl w-full mx-auto p-4 md:p-6 space-y-4">
         <EvolutionDashboard stats={stats} isAssessing={isAssessing} />
+        
+        <ReviewReminder 
+          dueItems={dueForReview}
+          upcomingItems={upcomingReviews}
+          onReviewClick={() => setShowLearningPath(true)}
+        />
+        
+        <LearningProgressSummary 
+          currentLevel={stats.level}
+          onViewDetails={() => setShowLearningPath(true)}
+        />
 
         <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden flex flex-col p-6 items-center justify-center text-center space-y-4">
           {status === ConnectionStatus.ERROR && (
@@ -233,12 +332,14 @@ const App: React.FC = () => {
             <h3 className="text-xl font-bold text-gray-900">{selectedPersona.name}</h3>
             <p className="text-gray-500 text-sm max-w-sm">
               {status === ConnectionStatus.CONNECTED 
-                ? "Conexão estável. Pode falar." 
+                ? (studyMode === 'text' ? "Modo Silencioso - Digite suas mensagens" : "Conexão estável. Pode falar.")
                 : "Preparando ambiente de mentoria..."}
             </p>
           </div>
 
-          <Visualizer isActive={status === ConnectionStatus.CONNECTED && !isMuted} status={status} />
+          {studyMode === 'voice' && (
+            <Visualizer isActive={status === ConnectionStatus.CONNECTED && !isMuted} status={status} />
+          )}
         </div>
 
         {result && (
@@ -247,47 +348,93 @@ const App: React.FC = () => {
 
         <ChatHistory entries={transcriptions} />
 
-        <div className="sticky bottom-6 flex justify-center items-center space-x-4">
-          <button 
-            onClick={() => setIsMuted(!isMuted)}
-            disabled={status !== ConnectionStatus.CONNECTED}
-            className={`p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95 flex items-center justify-center disabled:opacity-50 ${
-              isMuted ? 'bg-red-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            {isMuted ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z M1 1l22 22" /></svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-            )}
-          </button>
+        {studyMode === 'text' ? (
+          <div className="sticky bottom-6 bg-white rounded-2xl shadow-xl p-4 border border-gray-200">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (textInput.trim()) {
+                  console.log('📤 Enviando mensagem de texto:', textInput);
+                  sendTextMessage(textInput);
+                  setTextInput('');
+                }
+              }}
+              className="flex items-center space-x-3"
+            >
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (textInput.trim()) {
+                      console.log('📤 Enviando mensagem de texto:', textInput);
+                      sendTextMessage(textInput);
+                      setTextInput('');
+                    }
+                  }
+                }}
+                placeholder="Digite sua mensagem em inglês..."
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                autoFocus
+                disabled={status === ConnectionStatus.ERROR}
+              />
+              <button
+                type="submit"
+                disabled={!textInput.trim() || status === ConnectionStatus.ERROR}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold transition-colors flex items-center space-x-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+                <span>Enviar</span>
+              </button>
+            </form>
+          </div>
+        ) : (
+          <div className="sticky bottom-6 flex justify-center items-center space-x-4">
+            <button 
+              onClick={() => setIsMuted(!isMuted)}
+              disabled={status !== ConnectionStatus.CONNECTED}
+              className={`p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95 flex items-center justify-center disabled:opacity-50 ${
+                isMuted ? 'bg-red-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {isMuted ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z M1 1l22 22" /></svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+              )}
+            </button>
 
-          {status === ConnectionStatus.CONNECTED ? (
-             <div className="flex space-x-2">
-               <button 
+            {status === ConnectionStatus.CONNECTED ? (
+              <div className="flex space-x-2">
+                <button 
                   onClick={handleAnalyzeLast}
                   disabled={isAnalyzing || transcriptions.filter(t => t.role === 'user').length === 0}
                   className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-2xl font-bold shadow-xl flex items-center space-x-2 transition-all transform hover:scale-105 disabled:opacity-50"
-               >
-                 <span className="text-sm">Avaliar Fala</span>
-               </button>
+                >
+                  <span className="text-sm">Avaliar Fala</span>
+                </button>
 
-               <button 
+                <button 
                   onClick={stopSession}
                   className="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-2xl font-bold shadow-xl flex items-center space-x-2 transition-all"
-               >
-                 <span className="text-sm">Encerrar</span>
-               </button>
-             </div>
-          ) : (
-            <button 
+                >
+                  <span className="text-sm">Encerrar</span>
+                </button>
+              </div>
+            ) : (
+              <button 
                 onClick={startSession}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-bold shadow-2xl transition-all"
-             >
-               Reconectar Mentor
-             </button>
-          )}
-        </div>
+              >
+                Reconectar Mentor
+              </button>
+            )}
+          </div>
+        )}
       </main>
 
       <footer className="py-4 text-center text-gray-400 text-[10px] uppercase tracking-widest flex items-center justify-center space-x-2">
