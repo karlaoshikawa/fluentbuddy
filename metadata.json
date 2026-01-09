@@ -1,0 +1,7 @@
+{
+  "name": "FluentBuddy - AI English Teacher",
+  "description": "An interactive English conversation partner powered by Gemini Live API for real-time voice practice and instant feedback.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
