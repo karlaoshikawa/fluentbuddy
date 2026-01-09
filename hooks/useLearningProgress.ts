@@ -65,16 +65,13 @@ export function useLearningProgress(currentLevel: CEFRLevel) {
           const cloudDate = new Date(cloudProgress.lastUpdated);
           
           if (cloudDate > localDate) {
-            console.log('📥 Usando progresso da nuvem (mais recente)');
             setProgress(cloudProgress);
             localStorage.setItem('learning_progress', JSON.stringify(cloudProgress));
           } else {
-            console.log('💾 Usando progresso local (mais recente)');
             // Sincronizar progresso local para a nuvem
             await saveToFirebase(local);
           }
         } else {
-          console.log('📥 Carregando progresso da nuvem');
           setProgress(cloudProgress);
           localStorage.setItem('learning_progress', JSON.stringify(cloudProgress));
         }
@@ -97,7 +94,6 @@ export function useLearningProgress(currentLevel: CEFRLevel) {
       
       if (cloudDate > currentDate) {
         isSyncingFromCloud.current = true;
-        console.log('🔄 Atualizando com progresso de outro dispositivo');
         setProgress(cloudProgress);
         localStorage.setItem('learning_progress', JSON.stringify(cloudProgress));
         // Aguardar um pouco antes de permitir novos salvamentos
@@ -116,7 +112,6 @@ export function useLearningProgress(currentLevel: CEFRLevel) {
   useEffect(() => {
     if (isLoading) return;
     if (isSyncingFromCloud.current) {
-      console.log('⏸️ Pulando salvamento (sincronizando da nuvem)');
       return;
     }
     
@@ -135,12 +130,10 @@ export function useLearningProgress(currentLevel: CEFRLevel) {
       
       // SEMPRE salva localmente (funciona sem Firebase)
       localStorage.setItem('learning_progress', progressString);
-      console.log('💾 Progresso salvo localmente');
       
       // Se Firebase estiver configurado, também sincroniza na nuvem
       if (isInitialized && !isSyncingFromCloud.current) {
         saveToFirebase(progress);
-        console.log('☁️ Sincronizando com a nuvem...');
       }
     }, 300);
     

@@ -67,14 +67,11 @@ export function useLiveChat(
       setStatus(ConnectionStatus.CONNECTING);
       setErrorMsg(null);
 
-      console.log('🔧 Starting session with enableAudio:', enableAudio);
-
       // Importante: criar a instância do SDK exatamente antes de conectar para pegar a API_KEY atualizada do process.env
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
       // No modo texto, usar modelo mais barato (billing configurado)
       if (!enableAudio) {
-        console.log('✍️ TEXT MODE ACTIVATED - Modelo econômico (gemini-2.0-flash-exp)');
         const sessionPromise = ai.live.connect({
           model: 'gemini-2.0-flash-exp',
           config: {
@@ -83,7 +80,6 @@ export function useLiveChat(
           },
           callbacks: {
             onopen: () => {
-              console.log('Gemini Live session opened (TEXT MODE)');
               setStatus(ConnectionStatus.CONNECTED);
             },
             onmessage: async (message: LiveServerMessage) => {
@@ -109,6 +105,10 @@ export function useLiveChat(
               }
             },
             onerror: (e: any) => {
+              // Ignorar AbortError silenciosamente
+              if (e?.name === 'AbortError' || e?.message?.includes('aborted')) {
+                return;
+              }
               console.error('❌ Live API Error:', e);
               setErrorMsg(e?.message || 'Erro na sessão ao vivo. Verifique seu faturamento.');
               setStatus(ConnectionStatus.ERROR);
@@ -126,7 +126,6 @@ export function useLiveChat(
       }
 
       // Modo VOZ - Só inicializar áudio se estiver habilitado
-      console.log('🎤 VOICE MODE ACTIVATED - Audio will be used');
       const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext);
       inputAudioCtxRef.current = new AudioCtx({ sampleRate: 16000 });
       outputAudioCtxRef.current = new AudioCtx({ sampleRate: 24000 });
@@ -152,7 +151,6 @@ export function useLiveChat(
         },
         callbacks: {
           onopen: () => {
-            console.log('Gemini Live session opened (VOICE MODE)');
             setStatus(ConnectionStatus.CONNECTED);
             
             if (!inputAudioCtxRef.current || !micStreamRef.current) return;
@@ -174,7 +172,12 @@ export function useLiveChat(
 
               sessionPromise.then((session) => {
                 session.sendRealtimeInput({ media: pcmBlob });
-              }).catch(() => {});
+              }).catch((err) => {
+                // Ignorar AbortError silenciosamente (sessão cancelada)
+                if (err?.name !== 'AbortError') {
+                  console.error('❌ Erro ao enviar áudio:', err);
+                }
+              });
             };
 
             source.connect(scriptProcessor);
@@ -219,6 +222,10 @@ export function useLiveChat(
             }
           },
           onerror: (e: any) => {
+            // Ignorar AbortError silenciosamente
+            if (e?.name === 'AbortError' || e?.message?.includes('aborted')) {
+              return;
+            }
             console.error('Live API Error:', e);
             setErrorMsg(e?.message || 'Erro na sessão ao vivo. Verifique seu faturamento.');
             setStatus(ConnectionStatus.ERROR);
@@ -230,6 +237,11 @@ export function useLiveChat(
 
       sessionPromiseRef.current = sessionPromise;
     } catch (err: any) {
+      // Ignorar AbortError silenciosamente
+      if (err?.name === 'AbortError') {
+        return;
+      }
+      
       setErrorMsg(err?.message || 'Falha ao iniciar. Verifique sua conta.');
       setStatus(ConnectionStatus.ERROR);
     }
@@ -270,16 +282,17 @@ export function useLiveChat(
       setTranscriptions(prev => [...prev, userEntry]);
       currentInputText.current = text.trim();
       
-      console.log('📤 Enviando texto para Gemini:', text.trim());
-      
       // Envia como texto ao Gemini
       await session.sendRealtimeInput({ text: text.trim() });
-      console.log('✅ Texto enviado com sucesso');
-    } catch (error) {
+    } catch (error: any) {
+      // Ignorar AbortError silenciosamente
+      if (error?.name === 'AbortError') {
+        return;
+      }
+      
       console.error('❌ Erro ao enviar texto:', error);
       // Se der erro de WebSocket fechado, avisar o usuário
       if (error instanceof Error && error.message.includes('CLOSING or CLOSED')) {
-        console.log('⚠️ Conexão foi fechada. Por favor, inicie uma nova sessão.');
         setStatus(ConnectionStatus.DISCONNECTED);
         setErrorMsg('Conexão perdida. Clique em "Começar Sessão" novamente.');
       }

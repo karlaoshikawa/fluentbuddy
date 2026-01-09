@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveChat } from './hooks/useLiveChat';
 import { TEACHER_PERSONAS } from './constants';
-import { ConnectionStatus, TeacherPersona } from './types';
+import { ConnectionStatus, TeacherPersona, CEFRLevel } from './types';
 import ChatHistory from './components/ChatHistory';
 import Visualizer from './components/Visualizer';
 import { usePronunciationAnalysis } from './hooks/usePronunciationAnalysis';
@@ -14,28 +14,34 @@ import { LearningProgressSummary } from './components/LearningProgressSummary';
 import { LearningPath } from './components/LearningPath';
 import { ReviewReminder } from './components/ReviewReminder';
 import { Login } from './components/Login';
-import { ArrowLeft, Send, Microphone, MicrophoneOff, Stop, Book, Settings, Logout, Information, Play, Edit, Light, CurrencyDollar } from '@carbon/icons-react';
+import { LevelTest } from './components/LevelTest';
+import { ArrowLeft, Send, Microphone, MicrophoneOff, Stop, Book, Logout, Play, Edit } from '@carbon/icons-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState<TeacherPersona>(TEACHER_PERSONAS[0]);
   const [hasStarted, setHasStarted] = useState(false);
-  const [isKeyConfigured, setIsKeyConfigured] = useState(true);
-  const [showGuide, setShowGuide] = useState(false);
   const [showLearningPath, setShowLearningPath] = useState(false);
   const [studyMode, setStudyMode] = useState<'voice' | 'text'>('voice');
   const [textInput, setTextInput] = useState('');
+  const [showLevelTest, setShowLevelTest] = useState(false);
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   
-  // Verificar autenticação ao carregar
+  // Verificar autenticação e teste de nível ao carregar
   useEffect(() => {
     const auth = localStorage.getItem('fluentbuddy_auth');
     if (auth === 'true') {
       setIsAuthenticated(true);
     }
+    
+    // Verificar se já fez o teste de nível
+    const hasCompletedTest = localStorage.getItem('fluentbuddy_level_test_completed');
+    if (!hasCompletedTest && auth === 'true') {
+      setShowLevelTest(true);
+    }
   }, []);
   
-  const { stats, isAssessing, runAssessment } = useProgressTracker();
+  const { stats, isAssessing, runAssessment, setInitialLevel } = useProgressTracker();
   
   // Sistema de acompanhamento de requisitos de aprendizado
   const { 
@@ -61,29 +67,7 @@ const App: React.FC = () => {
 
   const { analyze, isAnalyzing, result, clear } = usePronunciationAnalysis();
 
-  useEffect(() => {
-    const checkKey = async () => {
-      if (window.aistudio) {
-        const hasKey = await window.aistudio.hasSelectedApiKey();
-        setIsKeyConfigured(hasKey);
-      }
-    };
-    checkKey();
-  }, []);
-
-  const handleOpenKeySelector = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
-      setIsKeyConfigured(true);
-    }
-  };
-
   const handleStart = async () => {
-    if (!isKeyConfigured) {
-      setShowGuide(true);
-      return;
-    }
-    console.log('🚀 Starting session with studyMode:', studyMode);
     setHasStarted(true);
     await startSession();
   };
@@ -98,6 +82,12 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLevelTestComplete = (level: CEFRLevel) => {
+    setInitialLevel(level);
+    localStorage.setItem('fluentbuddy_level_test_completed', 'true');
+    setShowLevelTest(false);
+  };
+
   const handleAnalyzeLast = () => {
     const lastUserEntry = [...transcriptions].reverse().find(t => t.role === 'user');
     if (lastUserEntry) {
@@ -110,52 +100,27 @@ const App: React.FC = () => {
     return <Login onLogin={() => setIsAuthenticated(true)} />;
   }
 
+  // Mostrar teste de nível se for a primeira vez
+  if (showLevelTest) {
+    return <LevelTest onComplete={handleLevelTestComplete} />;
+  }
+
   if (!hasStarted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        {showGuide && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl space-y-6">
-              <h3 className="text-2xl font-bold text-gray-900">Guia de Configuração</h3>
-              <div className="space-y-4 text-gray-600 text-sm">
-                <p>Para treinar para cargos de <strong>Manager</strong> com estabilidade, você precisa de uma API Key do Google.</p>
-                <ol className="list-decimal ml-4 space-y-2">
-                  <li>Crie uma chave em <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-slate-700 underline font-bold">AI Studio</a>.</li>
-                  <li>Ative o faturamento (Billing) no Google Cloud para evitar que a conexão caia.</li>
-                  <li>Clique no botão abaixo para inserir sua chave no sistema.</li>
-                </ol>
-                <div className="bg-slate-50 p-4 rounded-xl text-slate-700 text-xs leading-relaxed">
-                  <strong>Dica:</strong> Você pode usar aqui no PC mesmo. O "Deploy" serve para levar o app no celular para qualquer lugar.
-                </div>
-              </div>
-              <div className="flex flex-col space-y-3">
-                <button onClick={handleOpenKeySelector} className="w-full bg-slate-700 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-colors">
-                  Configurar Minha Chave
-                </button>
-                <button onClick={() => setShowGuide(false)} className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
-                  Fechar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="max-w-4xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
           <div className="md:w-1/2 bg-slate-700 p-8 text-white flex flex-col justify-center">
-            <div className="mb-6 flex justify-between items-center">
+            <div className="mb-6">
               <span className="bg-slate-600 bg-opacity-40 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">
                 Professional Tech English
               </span>
-              <button onClick={() => setShowGuide(true)} className="text-slate-200 hover:text-white transition-colors">
-                <Information size={24} />
-              </button>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">FluentBuddy</h1>
             <p className="text-slate-200 text-lg mb-8 leading-relaxed">
               Prepare-se para cargos internacionais de gestão com mentoria de voz em tempo real.
             </p>
             
-            <div className="mt-8 space-y-4">
+            <div className="mt-8">
                <div className="bg-slate-600 bg-opacity-20 border border-slate-500 border-opacity-30 rounded-2xl p-4">
                  <div className="flex justify-between items-center mb-2">
                     <span className="text-xs font-bold opacity-80 uppercase tracking-tighter">Sua Evolução CEFR</span>
@@ -165,16 +130,6 @@ const App: React.FC = () => {
                     <div className="h-full bg-white rounded-full transition-all duration-1000" style={{ width: `${(stats.grammar + stats.vocabulary + stats.communication) / 3}%` }} />
                  </div>
                </div>
-
-               {!isKeyConfigured && (
-                 <div className="bg-slate-100 bg-opacity-80 border border-slate-300 rounded-2xl p-4 text-xs">
-                   <p className="font-bold mb-1 flex items-center gap-1 text-slate-900"><Light size={16} /> Upgrade para Management</p>
-                   <p className="text-slate-600 mb-3 text-[11px]">O plano gratuito pode cair. Configure uma chave paga para sessões ilimitadas.</p>
-                   <button onClick={handleOpenKeySelector} className="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-lg transition-all w-full">
-                     Configurar Conta Paga
-                   </button>
-                 </div>
-               )}
             </div>
           </div>
 
@@ -233,11 +188,10 @@ const App: React.FC = () => {
                   <span>Texto</span>
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-2 text-center flex items-center justify-center gap-1">
-                <CurrencyDollar size={14} />
+              <p className="text-xs text-gray-500 mt-2 text-center">
                 {studyMode === 'voice' 
-                  ? 'Modo completo com áudio (mais caro)' 
-                  : 'Modo silencioso, apenas texto (mais barato)'}
+                  ? 'Modo completo com áudio' 
+                  : 'Modo silencioso, apenas texto'}
               </p>
             </div>
             
@@ -245,7 +199,7 @@ const App: React.FC = () => {
               onClick={handleStart}
               className="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg transform active:scale-95 transition-all duration-200 flex items-center justify-center space-x-2"
             >
-              <span>{isKeyConfigured ? 'Começar Sessão' : 'Configurar para Começar'}</span>
+              <span>Começar Sessão</span>
               <ArrowLeft size={20} className="rotate-180" />
             </button>
           </div>
@@ -318,10 +272,7 @@ const App: React.FC = () => {
             <Book size={14} />
             REQUISITOS
           </button>
-           <button onClick={handleOpenKeySelector} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-[10px] font-bold transition-colors">
-            <Settings size={14} />
-            CONFIGURAR
-          </button>
+
           <button
             onClick={() => {
               localStorage.removeItem('fluentbuddy_auth');
@@ -352,8 +303,7 @@ const App: React.FC = () => {
         <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden flex flex-col p-6 items-center justify-center text-center space-y-4">
           {status === ConnectionStatus.ERROR && (
             <div className="w-full bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 text-sm">
-               {errorMsg?.includes("not found") ? "Sua chave API expirou ou é inválida. Clique abaixo para re-configurar." : errorMsg || 'Erro de conexão.'}
-               <button onClick={handleOpenKeySelector} className="block w-full mt-2 font-bold underline">Re-configurar Chave</button>
+               {errorMsg || 'Erro de conexão.'}
             </div>
           )}
 
@@ -393,7 +343,7 @@ const App: React.FC = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (textInput.trim()) {
-                  console.log('📤 Enviando mensagem de texto:', textInput);
+
                   sendTextMessage(textInput);
                   setTextInput('');
                 }
@@ -408,7 +358,7 @@ const App: React.FC = () => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     if (textInput.trim()) {
-                      console.log('📤 Enviando mensagem de texto:', textInput);
+
                       sendTextMessage(textInput);
                       setTextInput('');
                     }

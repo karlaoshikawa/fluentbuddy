@@ -67,7 +67,6 @@ export async function ensureAuthenticated() {
   if (!auth.currentUser) {
     try {
       await signInAnonymously(auth);
-      console.log('✅ Usuário autenticado anonimamente');
     } catch (error) {
       console.error('❌ Erro ao autenticar:', error);
       throw error;

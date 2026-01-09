@@ -24,13 +24,11 @@ export function useFirebaseSync() {
         
         // Se Firebase não está configurado ou falhou
         if (!result) {
-          console.log('💾 Modo LOCAL: Progresso salvo apenas neste dispositivo (localStorage)');
           setIsInitialized(false);
           setSyncError('Firebase não configurado - usando apenas localStorage');
           return;
         }
 
-        console.log('☁️ Modo CLOUD: Progresso sincronizado entre dispositivos');
         setIsInitialized(true);
       } catch (error) {
         console.warn('⚠️ Não foi possível conectar ao Firebase. Usando modo local.', error);
@@ -69,7 +67,6 @@ export function useFirebaseSync() {
       }, { merge: true });
 
       setLastSyncTime(new Date());
-      console.log('✅ Progresso salvo no Firebase');
     } catch (error) {
       console.error('❌ Erro ao salvar progresso:', error);
       setSyncError('Erro ao salvar progresso');
@@ -98,7 +95,6 @@ export function useFirebaseSync() {
 
       if (docSnap.exists()) {
         const data = docSnap.data();
-        console.log('✅ Progresso carregado do Firebase');
         
         // Converter Timestamp do Firebase para Date
         return {
@@ -108,7 +104,6 @@ export function useFirebaseSync() {
             : new Date(data.lastUpdated)
         } as UserProgress;
       } else {
-        console.log('ℹ️ Nenhum progresso encontrado no Firebase');
         return null;
       }
     } catch (error) {
@@ -148,7 +143,6 @@ export function useFirebaseSync() {
         
         onUpdate(progress);
         setLastSyncTime(new Date());
-        console.log('🔄 Progresso atualizado em tempo real');
       }
     }, (error) => {
       console.error('❌ Erro na sincronização em tempo real:', error);

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { UserStats } from '../types';
-import { Renew, Money } from '@carbon/icons-react';
+import { Renew } from '@carbon/icons-react';
 
 interface EvolutionDashboardProps {
   stats: UserStats;
@@ -51,10 +51,6 @@ const EvolutionDashboard: React.FC<EvolutionDashboardProps> = ({ stats, isAssess
           <span className="text-sm font-bold text-gray-700">
             {stats.level.startsWith('A') ? 'Basic User' : stats.level.startsWith('B') ? 'Independent User' : 'Proficient User'}
           </span>
-          <div className="flex items-center mt-1 text-[9px] text-gray-400 font-medium">
-            <Money size={12} className="mr-1" />
-            Uso: Est. Low Cost
-          </div>
         </div>
       </div>
 

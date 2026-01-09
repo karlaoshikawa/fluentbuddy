@@ -114,7 +114,7 @@ export function useSpacedRepetition() {
    */
   const getItemsDueForReview = useCallback((): ReviewItem[] => {
     const now = new Date();
-    return Object.values(reviewSchedule).filter(item => 
+    return (Object.values(reviewSchedule) as ReviewItem[]).filter(item => 
       item.nextReview <= now
     ).sort((a, b) => a.nextReview.getTime() - b.nextReview.getTime());
   }, [reviewSchedule]);
@@ -127,7 +127,7 @@ export function useSpacedRepetition() {
     const future = new Date(now);
     future.setDate(future.getDate() + days);
     
-    return Object.values(reviewSchedule).filter(item => 
+    return (Object.values(reviewSchedule) as ReviewItem[]).filter(item => 
       item.nextReview > now && item.nextReview <= future
     ).sort((a, b) => a.nextReview.getTime() - b.nextReview.getTime());
   }, [reviewSchedule]);

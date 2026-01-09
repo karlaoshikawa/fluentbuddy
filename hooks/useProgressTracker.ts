@@ -60,5 +60,23 @@ export function useProgressTracker() {
     }
   }, []);
 
-  return { stats, isAssessing, runAssessment };
+  const setInitialLevel = useCallback((level: CEFRLevel) => {
+    const levelScores: Record<CEFRLevel, { grammar: number; vocabulary: number; communication: number }> = {
+      'A1': { grammar: 15, vocabulary: 20, communication: 25 },
+      'A2': { grammar: 30, vocabulary: 35, communication: 40 },
+      'B1': { grammar: 45, vocabulary: 50, communication: 55 },
+      'B2': { grammar: 60, vocabulary: 65, communication: 70 },
+      'C1': { grammar: 75, vocabulary: 80, communication: 85 },
+      'C2': { grammar: 90, vocabulary: 90, communication: 95 }
+    };
+
+    const scores = levelScores[level];
+    setStats({
+      ...scores,
+      level,
+      totalTurns: 0
+    });
+  }, []);
+
+  return { stats, isAssessing, runAssessment, setInitialLevel };
 }
