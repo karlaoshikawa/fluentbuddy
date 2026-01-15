@@ -15,16 +15,20 @@ import { LearningPath } from './components/LearningPath';
 import { ReviewReminder } from './components/ReviewReminder';
 import { Login } from './components/Login';
 import { LevelTest } from './components/LevelTest';
-import { ArrowLeft, Send, Microphone, MicrophoneOff, Stop, Book, Logout, Play, Edit } from '@carbon/icons-react';
+import { VocabularyExercises } from './components/VocabularyExercises';
+import { RequirementNotification, setNotificationCallback } from './components/RequirementNotification';
+import { ArrowLeft, Send, Microphone, MicrophoneOff, Stop, Book, Logout, Play, Edit, Education } from '@carbon/icons-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState<TeacherPersona>(TEACHER_PERSONAS[0]);
   const [hasStarted, setHasStarted] = useState(false);
   const [showLearningPath, setShowLearningPath] = useState(false);
+  const [showExercises, setShowExercises] = useState(false);
   const [studyMode, setStudyMode] = useState<'voice' | 'text'>('voice');
   const [textInput, setTextInput] = useState('');
   const [showLevelTest, setShowLevelTest] = useState(false);
+  const [notification, setNotification] = useState<{ show: boolean; name: string }>({ show: false, name: '' });
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   
   // Verificar autenticação e teste de nível ao carregar
@@ -39,6 +43,24 @@ const App: React.FC = () => {
     if (!hasCompletedTest && auth === 'true') {
       setShowLevelTest(true);
     }
+
+    // NOVO: Configurar callback de notificações
+    setNotificationCallback((requirementName: string) => {
+      setNotification({ show: true, name: requirementName });
+    });
+
+    // NOVO: Listener para eventos de progresso automático
+    const handleProgressUpdate = (event: CustomEvent) => {
+      const updatedProgress = event.detail;
+      // Opcional: mostrar notificação se novos requisitos foram adicionados
+      console.log('✅ Progresso atualizado automaticamente!', updatedProgress);
+    };
+
+    window.addEventListener('progressUpdated', handleProgressUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('progressUpdated', handleProgressUpdate as EventListener);
+    };
   }, []);
   
   const { stats, isAssessing, runAssessment, setInitialLevel } = useProgressTracker();
@@ -73,7 +95,9 @@ const App: React.FC = () => {
   };
 
   const handleBack = () => {
-    if (showLearningPath) {
+    if (showExercises) {
+      setShowExercises(false);
+    } else if (showLearningPath) {
       setShowLearningPath(false);
     } else {
       stopSession();
@@ -107,105 +131,232 @@ const App: React.FC = () => {
 
   if (!hasStarted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-4xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
-          <div className="md:w-1/2 bg-slate-700 p-8 text-white flex flex-col justify-center">
-            <div className="mb-6">
-              <span className="bg-slate-600 bg-opacity-40 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">
-                Professional Tech English
-              </span>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+          <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center text-white font-bold text-xl">
+                F
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">FluentBuddy</h1>
+                <p className="text-xs text-gray-500">Professional English Coach</p>
+              </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">FluentBuddy</h1>
-            <p className="text-slate-200 text-lg mb-8 leading-relaxed">
-              Prepare-se para cargos internacionais de gestão com mentoria de voz em tempo real.
-            </p>
-            
-            <div className="mt-8">
-               <div className="bg-slate-600 bg-opacity-20 border border-slate-500 border-opacity-30 rounded-2xl p-4">
-                 <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-bold opacity-80 uppercase tracking-tighter">Sua Evolução CEFR</span>
-                    <span className="bg-white text-slate-700 px-2 py-0.5 rounded-lg text-xs font-bold">{stats.level}</span>
-                 </div>
-                 <div className="h-2 w-full bg-slate-800 bg-opacity-40 rounded-full overflow-hidden">
-                    <div className="h-full bg-white rounded-full transition-all duration-1000" style={{ width: `${(stats.grammar + stats.vocabulary + stats.communication) / 3}%` }} />
-                 </div>
-               </div>
+            <button
+              onClick={() => {
+                localStorage.removeItem('fluentbuddy_auth');
+                setIsAuthenticated(false);
+              }}
+              className="text-sm text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1.5 px-3 py-2"
+            >
+              <Logout size={18} />
+              <span>Sair</span>
+            </button>
+          </div>
+        </header>
+
+        <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+          {/* Card de Boas-vindas e Nível */}
+          <div className="bg-gradient-to-br from-slate-700 via-slate-600 to-slate-800 rounded-3xl p-8 text-white shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div className="flex-1">
+                <span className="inline-block bg-white bg-opacity-20 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">
+                  Seu Progresso
+                </span>
+                <h2 className="text-3xl font-bold mb-2">Nível {stats.level}</h2>
+                <p className="text-slate-200 text-sm">
+                  Continue praticando para evoluir suas habilidades em inglês
+                </p>
+              </div>
+              <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-6 min-w-[200px]">
+                <div className="text-center mb-3">
+                  <div className="text-4xl font-bold">{Math.round((stats.grammar + stats.vocabulary + stats.communication) / 3)}%</div>
+                  <div className="text-xs text-slate-300 mt-1">Progresso Geral</div>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Gramática</span>
+                    <span className="font-bold">{stats.grammar}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Vocabulário</span>
+                    <span className="font-bold">{stats.vocabulary}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Comunicação</span>
+                    <span className="font-bold">{stats.communication}%</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="md:w-1/2 p-8 flex flex-col">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Selecione seu Coach</h2>
-            <div className="space-y-4 flex-1">
-              {TEACHER_PERSONAS.map((persona) => (
-                <button
-                  key={persona.id}
-                  onClick={() => setSelectedPersona(persona)}
-                  className={`w-full text-left p-4 rounded-2xl border-2 transition-all duration-200 flex items-center space-x-4 ${
-                    selectedPersona.id === persona.id 
-                      ? 'border-slate-600 bg-slate-50 shadow-md' 
-                      : 'border-gray-100 hover:border-gray-200'
-                  }`}
-                >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl ${
-                    persona.id === 'alex' ? 'bg-slate-600' : persona.id === 'sarah' ? 'bg-slate-700' : 'bg-slate-800'
-                  }`}>
-                    {persona.name[0]}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-bold text-gray-900">{persona.name}</h4>
-                      <span className="text-xs font-medium text-gray-500 px-2 py-0.5 bg-gray-100 rounded-full">{persona.accent}</span>
-                    </div>
-                    <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{persona.description}</p>
-                  </div>
-                </button>
-              ))}
+          {/* Progresso de Aprendizado */}
+          <LearningProgressSummary 
+            currentLevel={stats.level}
+            onViewDetails={() => {
+              setHasStarted(true);
+              setShowLearningPath(true);
+            }}
+          />
+
+          {/* Grid de Ações */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Card de Conversação */}
+            <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Microphone size={24} className="text-slate-700" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">Sessão de Conversação</h3>
+                  <p className="text-sm text-gray-600">Pratique inglês com IA em tempo real</p>
+                </div>
+              </div>
+
+              {/* Seleção de Coach */}
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-gray-700 mb-3">Escolha seu Coach:</label>
+                <div className="space-y-2">
+                  {TEACHER_PERSONAS.map((persona) => (
+                    <button
+                      key={persona.id}
+                      onClick={() => setSelectedPersona(persona)}
+                      className={`w-full text-left p-3 rounded-xl border-2 transition-all duration-200 flex items-center gap-3 ${
+                        selectedPersona.id === persona.id 
+                          ? 'border-slate-600 bg-slate-50 shadow-md' 
+                          : 'border-gray-200 hover:border-slate-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 ${
+                        persona.id === 'alex' ? 'bg-slate-600' : persona.id === 'sarah' ? 'bg-slate-700' : 'bg-slate-800'
+                      }`}>
+                        {persona.name[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-gray-900 text-sm">{persona.name}</h4>
+                          <span className="text-[10px] font-medium text-gray-500 px-2 py-0.5 bg-gray-100 rounded-full">
+                            {persona.accent}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Modo de Estudo */}
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-gray-700 mb-3">Modo:</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setStudyMode('voice')}
+                    className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+                      studyMode === 'voice' 
+                        ? 'bg-slate-700 text-white shadow-md' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Microphone size={18} />
+                    <span className="text-sm">Voz</span>
+                  </button>
+                  <button
+                    onClick={() => setStudyMode('text')}
+                    className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+                      studyMode === 'text' 
+                        ? 'bg-slate-700 text-white shadow-md' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Edit size={18} />
+                    <span className="text-sm">Texto</span>
+                  </button>
+                </div>
+              </div>
+
+              <button 
+                onClick={handleStart}
+                className="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg transform hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <Play size={20} />
+                <span>Iniciar Conversação</span>
+              </button>
             </div>
 
-            <div className="mt-6 mb-4">
-              <label className="block text-sm font-bold text-gray-700 mb-3">Modo de Estudo:</label>
-              <div className="flex items-center bg-gray-100 rounded-2xl p-1.5">
-                <button
-                  onClick={() => setStudyMode('voice')}
-                  className={`flex-1 px-4 py-3 rounded-xl font-bold transition-all duration-200 flex items-center justify-center space-x-2 ${
-                    studyMode === 'voice' 
-                      ? 'bg-white text-slate-700 shadow-md' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <Microphone size={20} />
-                  <span>Voz</span>
-                </button>
-                <button
-                  onClick={() => setStudyMode('text')}
-                  className={`flex-1 px-4 py-3 rounded-xl font-bold transition-all duration-200 flex items-center justify-center space-x-2 ${
-                    studyMode === 'text' 
-                      ? 'bg-white text-slate-700 shadow-md' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <Edit size={20} />
-                  <span>Texto</span>
-                </button>
+            {/* Card de Exercícios */}
+            <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Education size={24} className="text-amber-700" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">Exercícios Práticos</h3>
+                  <p className="text-sm text-gray-600">Vocabulário, gramática e escrita</p>
+                </div>
               </div>
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                {studyMode === 'voice' 
-                  ? 'Modo completo com áudio' 
-                  : 'Modo silencioso, apenas texto'}
-              </p>
+
+              <div className="space-y-4 mb-6">
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-900">Tipos de Exercício</span>
+                  </div>
+                  <ul className="space-y-1.5 text-xs text-gray-600">
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                      Reordenar palavras
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                      Completar frases
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                      Tradução
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                      Escrita livre
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                      Contexto situacional
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                  <p className="text-xs text-blue-900">
+                    <strong>💡 Dica:</strong> Os exercícios usam repetição espaçada para otimizar seu aprendizado!
+                  </p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => {
+                  setHasStarted(true);
+                  setShowExercises(true);
+                }}
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 rounded-xl shadow-lg transform hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <Education size={20} />
+                <span>Começar Exercícios</span>
+              </button>
             </div>
-            
-            <button 
-              onClick={handleStart}
-              className="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg transform active:scale-95 transition-all duration-200 flex items-center justify-center space-x-2"
-            >
-              <span>Começar Sessão</span>
-              <ArrowLeft size={20} className="rotate-180" />
-            </button>
           </div>
         </div>
       </div>
     );
+  }
+
+  // Renderizar VocabularyExercises se estiver ativo
+  if (showExercises) {
+    return <VocabularyExercises currentLevel={stats.level} onClose={() => {
+      setShowExercises(false);
+      setHasStarted(false);
+    }} />;
   }
 
   // Renderizar LearningPath se estiver ativo
@@ -265,6 +416,13 @@ const App: React.FC = () => {
         </div>
         
         <div className="flex items-center space-x-2">
+           <button 
+             onClick={() => setShowExercises(true)}
+             className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-full text-[10px] font-bold transition-colors"
+           >
+            <Education size={14} />
+            EXERCÍCIOS
+          </button>
            <button 
              onClick={() => setShowLearningPath(true)}
              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full text-[10px] font-bold transition-colors"
@@ -426,6 +584,13 @@ const App: React.FC = () => {
           {isLocal ? 'Ambiente Local' : 'Deploy Ativo'}
         </span>
       </footer>
+
+      {/* Notificação de requisito completo */}
+      <RequirementNotification 
+        show={notification.show}
+        requirementName={notification.name}
+        onClose={() => setNotification({ show: false, name: '' })}
+      />
     </div>
   );
 };

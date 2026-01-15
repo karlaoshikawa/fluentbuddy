@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLearningProgress } from '../hooks/useLearningProgress';
 import { CEFRLevel } from '../types';
 import { CATEGORY_NAMES } from '../data';
@@ -15,6 +15,20 @@ export function LearningProgressSummary({ currentLevel, onViewDetails }: Learnin
   const nextRequirement = getNextRequirement();
   
   const categories = Object.keys(CATEGORY_NAMES) as Array<keyof typeof CATEGORY_NAMES>;
+
+  // NOVO: Reagir a atualizações automáticas de progresso
+  useEffect(() => {
+    const handleProgressUpdate = (event: CustomEvent) => {
+      // Forçar re-render quando progresso for atualizado automaticamente
+      window.location.reload(); // Simples reload, ou usar state management
+    };
+
+    window.addEventListener('progressUpdated', handleProgressUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('progressUpdated', handleProgressUpdate as EventListener);
+    };
+  }, []);
 
   return (
     <div className="learning-progress-summary">

@@ -2,7 +2,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { ConnectionStatus, TranscriptionEntry, TeacherPersona, CEFRLevel } from '../types';
-import { decode, encode, decodeAudioData } from '../utils/audioUtils';
+import { decode, encode, decodeAudioData, VoiceActivityDetector, applyNoiseGate } from '../utils/audioUtils';
 import { SYSTEM_INSTRUCTION } from '../constants';
 
 export function useLiveChat(
@@ -24,6 +24,13 @@ export function useLiveChat(
   const sourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
   const micStreamRef = useRef<MediaStream | null>(null);
   const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
+  
+  // VAD - Voice Activity Detector
+  const vadRef = useRef<VoiceActivityDetector>(new VoiceActivityDetector());
+  const silenceFramesRef = useRef<number>(0);
+  const voiceFramesRef = useRef<number>(0);
+  const SILENCE_THRESHOLD = 10; // Frames de silêncio antes de parar de enviar
+  const VOICE_THRESHOLD = 2; // Frames com voz antes de começar a enviar
 
   const currentInputText = useRef('');
   const currentOutputText = useRef('');
@@ -41,6 +48,11 @@ export function useLiveChat(
       try { s.stop(); } catch(e) {}
     });
     sourcesRef.current.clear();
+    
+    // Reset VAD
+    vadRef.current.reset();
+    silenceFramesRef.current = 0;
+    voiceFramesRef.current = 0;
     
     if (sessionPromiseRef.current) {
       sessionPromiseRef.current.then(session => {
@@ -161,15 +173,46 @@ export function useLiveChat(
 
             scriptProcessor.onaudioprocess = (e) => {
               if (isMuted) return;
+              
               const inputData = e.inputBuffer.getChannelData(0);
-              const int16 = new Int16Array(inputData.length);
-              for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
+              
+              // NOVO: Detecção de atividade de voz (VAD)
+              const hasVoice = vadRef.current.isVoicePresent(inputData);
+              
+              if (hasVoice) {
+                voiceFramesRef.current++;
+                silenceFramesRef.current = 0;
+              } else {
+                silenceFramesRef.current++;
+                voiceFramesRef.current = 0;
+              }
+              
+              // Só enviar se:
+              // 1. Detectou voz consistente (pelo menos VOICE_THRESHOLD frames) OU
+              // 2. Já estava enviando e ainda não teve silêncio prolongado
+              const shouldSend = voiceFramesRef.current >= VOICE_THRESHOLD || 
+                                (silenceFramesRef.current < SILENCE_THRESHOLD && silenceFramesRef.current > 0);
+              
+              if (!shouldSend) {
+                // console.log('🔇 Silêncio/ruído detectado - não enviando');
+                return; // NÃO ENVIAR ruído/silêncio
+              }
+              
+              // NOVO: Aplicar noise gate para remover ruído de fundo
+              const cleanedData = applyNoiseGate(inputData, 0.01);
+              
+              // Converter para Int16
+              const int16 = new Int16Array(cleanedData.length);
+              for (let i = 0; i < cleanedData.length; i++) {
+                int16[i] = cleanedData[i] * 32768;
+              }
               
               const pcmBlob = {
                 data: encode(new Uint8Array(int16.buffer)),
                 mimeType: 'audio/pcm;rate=16000',
               };
 
+              // console.log('🎤 Enviando áudio com voz detectada');
               sessionPromise.then((session) => {
                 session.sendRealtimeInput({ media: pcmBlob });
               }).catch((err) => {

@@ -934,3 +934,611 @@ export const CATEGORY_NAMES = {
   writing: 'Escrita',
   pronunciation: 'Pronúncia'
 };
+
+// ===== BANCO DE EXERCÍCIOS =====
+import { Exercise } from './types';
+
+export const EXERCISE_BANK: Exercise[] = [
+  // ===== A1 - BÁSICO =====
+  
+  // Reordenar frases - rotina diária
+  {
+    id: 'a1-reorder-1',
+    type: 'reorder',
+    level: 'A1',
+    category: 'vocabulary',
+    question: 'Organize as palavras para formar uma frase:',
+    words: ['I', 'coffee', 'drink', 'morning', 'every'],
+    correctAnswer: 'I drink coffee every morning',
+    explanation: 'Sujeito + verbo + objeto + tempo',
+    tags: ['present-simple', 'daily-routine']
+  },
+  {
+    id: 'a1-reorder-2',
+    type: 'reorder',
+    level: 'A1',
+    category: 'vocabulary',
+    question: 'Organize as palavras:',
+    words: ['is', 'my', 'name', 'Maria'],
+    correctAnswer: 'My name is Maria',
+    explanation: 'Estrutura básica de apresentação',
+    tags: ['introductions', 'be-verb']
+  },
+  {
+    id: 'a1-reorder-3',
+    type: 'reorder',
+    level: 'A1',
+    category: 'vocabulary',
+    question: 'Forme a frase correta:',
+    words: ['go', 'I', 'to', 'school', 'every day'],
+    correctAnswer: 'I go to school every day',
+    explanation: 'Rotina diária no presente simples',
+    tags: ['present-simple', 'daily-routine']
+  },
+
+  // Completar frases
+  {
+    id: 'a1-complete-1',
+    type: 'complete',
+    level: 'A1',
+    category: 'grammar',
+    question: 'Complete com o verbo "be" correto:',
+    content: 'She ___ a teacher.',
+    options: ['is', 'am', 'are'],
+    correctAnswer: 'is',
+    explanation: 'She/He/It usa "is"',
+    tags: ['be-verb', 'professions']
+  },
+  {
+    id: 'a1-complete-2',
+    type: 'complete',
+    level: 'A1',
+    category: 'grammar',
+    question: 'Escolha a preposição correta:',
+    content: 'I live ___ Brazil.',
+    options: ['in', 'on', 'at'],
+    correctAnswer: 'in',
+    explanation: 'Usamos "in" para países',
+    tags: ['prepositions', 'places']
+  },
+  {
+    id: 'a1-complete-3',
+    type: 'complete',
+    level: 'A1',
+    category: 'vocabulary',
+    question: 'Complete a frase:',
+    content: 'I ___ pizza.',
+    options: ['like', 'likes', 'liking'],
+    correctAnswer: 'like',
+    explanation: 'I/You/We/They usam a forma base do verbo',
+    tags: ['present-simple', 'food', 'preferences']
+  },
+
+  // Tradução (PT → EN)
+  {
+    id: 'a1-translate-1',
+    type: 'translate',
+    level: 'A1',
+    category: 'vocabulary',
+    question: 'Traduza para inglês:',
+    content: 'Olá, como você está?',
+    options: ['Hello, how are you?', 'Hi, what are you?', 'Hello, where are you?'],
+    correctAnswer: 'Hello, how are you?',
+    explanation: 'Cumprimento básico em inglês',
+    tags: ['greetings', 'basic-phrases']
+  },
+  {
+    id: 'a1-translate-2',
+    type: 'translate',
+    level: 'A1',
+    category: 'vocabulary',
+    question: 'Como se diz em inglês:',
+    content: 'Eu tenho 25 anos.',
+    options: ['I have 25 years.', 'I am 25 years old.', 'I am 25 years.'],
+    correctAnswer: 'I am 25 years old.',
+    explanation: 'Em inglês usamos "to be" + years old',
+    tags: ['age', 'numbers', 'about-me']
+  },
+
+  // Contexto - situações reais
+  {
+    id: 'a1-context-1',
+    type: 'context',
+    level: 'A1',
+    category: 'vocabulary',
+    question: 'Você quer pedir um café. O que você diz?',
+    options: [
+      'I want a coffee, please.',
+      'Give me coffee now!',
+      'Coffee I want.'
+    ],
+    correctAnswer: 'I want a coffee, please.',
+    explanation: '"Please" torna o pedido educado',
+    tags: ['ordering', 'polite-expressions']
+  },
+  {
+    id: 'a1-context-2',
+    type: 'context',
+    level: 'A1',
+    category: 'vocabulary',
+    question: 'Como você se despede de forma educada?',
+    options: ['Goodbye!', 'Go away!', 'Stop!'],
+    correctAnswer: 'Goodbye!',
+    explanation: 'Despedida padrão em inglês',
+    tags: ['greetings', 'polite-expressions']
+  },
+
+  // ===== A2 - ELEMENTAR =====
+
+  {
+    id: 'a2-reorder-1',
+    type: 'reorder',
+    level: 'A2',
+    category: 'grammar',
+    question: 'Organize para formar uma pergunta:',
+    words: ['do', 'what', 'you', 'do', 'weekends', 'on'],
+    correctAnswer: 'What do you do on weekends',
+    explanation: 'Estrutura de pergunta: What + do/does + sujeito + verbo',
+    tags: ['questions', 'present-simple', 'free-time']
+  },
+  {
+    id: 'a2-reorder-2',
+    type: 'reorder',
+    level: 'A2',
+    category: 'grammar',
+    question: 'Forme a frase no passado:',
+    words: ['yesterday', 'I', 'went', 'to', 'the', 'park'],
+    correctAnswer: 'I went to the park yesterday',
+    explanation: 'Passado simples: sujeito + verbo no passado + complemento',
+    tags: ['past-simple', 'irregular-verbs']
+  },
+
+  {
+    id: 'a2-complete-1',
+    type: 'complete',
+    level: 'A2',
+    category: 'grammar',
+    question: 'Complete com o tempo verbal correto:',
+    content: 'She ___ to the gym three times a week.',
+    options: ['go', 'goes', 'going'],
+    correctAnswer: 'goes',
+    explanation: 'He/She/It adiciona -s/-es no presente simples',
+    tags: ['present-simple', 'third-person', 'frequency']
+  },
+  {
+    id: 'a2-complete-2',
+    type: 'complete',
+    level: 'A2',
+    category: 'vocabulary',
+    question: 'Escolha a palavra correta:',
+    content: 'I have ___ friends than my brother.',
+    options: ['more', 'most', 'much'],
+    correctAnswer: 'more',
+    explanation: 'Comparativo: more... than',
+    tags: ['comparatives', 'quantifiers']
+  },
+
+  {
+    id: 'a2-translate-1',
+    type: 'translate',
+    level: 'A2',
+    category: 'vocabulary',
+    question: 'Traduza:',
+    content: 'Eu estava estudando quando ele chegou.',
+    options: [
+      'I was studying when he arrived.',
+      'I studied when he arrived.',
+      'I am studying when he arrived.'
+    ],
+    correctAnswer: 'I was studying when he arrived.',
+    explanation: 'Passado contínuo + passado simples para ações interrompidas',
+    tags: ['past-continuous', 'past-simple', 'time-clauses']
+  },
+
+  {
+    id: 'a2-context-1',
+    type: 'context',
+    level: 'A2',
+    category: 'vocabulary',
+    question: 'Seu amigo está doente. O que você diz?',
+    options: [
+      'I hope you feel better soon!',
+      'That is good!',
+      'Why are you sick?'
+    ],
+    correctAnswer: 'I hope you feel better soon!',
+    explanation: 'Expressão de desejo de melhoras',
+    tags: ['health', 'sympathy', 'wishes']
+  },
+
+  // ===== B1 - INTERMEDIÁRIO =====
+
+  {
+    id: 'b1-reorder-1',
+    type: 'reorder',
+    level: 'B1',
+    category: 'grammar',
+    question: 'Organize para formar uma frase condicional:',
+    words: ['if', 'I', 'had', 'time', 'I', 'would', 'travel', 'more'],
+    correctAnswer: 'If I had time I would travel more',
+    explanation: 'Segunda condicional: If + passado simples, would + verbo',
+    tags: ['conditionals', 'hypothetical']
+  },
+  {
+    id: 'b1-reorder-2',
+    type: 'reorder',
+    level: 'B1',
+    category: 'grammar',
+    question: 'Forme a frase com present perfect:',
+    words: ['have', 'I', 'been', 'to', 'Paris', 'three times'],
+    correctAnswer: 'I have been to Paris three times',
+    explanation: 'Present perfect para experiências de vida',
+    tags: ['present-perfect', 'experiences', 'travel']
+  },
+
+  {
+    id: 'b1-complete-1',
+    type: 'complete',
+    level: 'B1',
+    category: 'grammar',
+    question: 'Complete com a forma correta:',
+    content: 'By the time you arrive, I ___ dinner.',
+    options: ['will have finished', 'will finish', 'finished'],
+    correctAnswer: 'will have finished',
+    explanation: 'Future perfect para ação que estará completa no futuro',
+    tags: ['future-perfect', 'time-clauses']
+  },
+  {
+    id: 'b1-complete-2',
+    type: 'complete',
+    level: 'B1',
+    category: 'vocabulary',
+    question: 'Escolha o phrasal verb correto:',
+    content: 'Can you ___ the music? It\'s too loud.',
+    options: ['turn down', 'turn up', 'turn off'],
+    correctAnswer: 'turn down',
+    explanation: '"Turn down" = diminuir o volume',
+    tags: ['phrasal-verbs', 'requests']
+  },
+
+  {
+    id: 'b1-translate-1',
+    type: 'translate',
+    level: 'B1',
+    category: 'grammar',
+    question: 'Traduza usando estrutura adequada:',
+    content: 'Apesar de estar cansado, ele continuou trabalhando.',
+    options: [
+      'Although he was tired, he kept working.',
+      'Despite he was tired, he kept working.',
+      'Because he was tired, he kept working.'
+    ],
+    correctAnswer: 'Although he was tired, he kept working.',
+    explanation: 'Although + sujeito + verbo (apesar de/embora)',
+    tags: ['connectors', 'contrast', 'complex-sentences']
+  },
+
+  {
+    id: 'b1-context-1',
+    type: 'context',
+    level: 'B1',
+    category: 'vocabulary',
+    question: 'Você quer sugerir algo educadamente. Como expressa?',
+    options: [
+      'How about going to the movies?',
+      'We must go to the movies!',
+      'Go to the movies!'
+    ],
+    correctAnswer: 'How about going to the movies?',
+    explanation: '"How about + gerúndio" é uma forma educada de sugerir',
+    tags: ['suggestions', 'polite-expressions', 'gerunds']
+  },
+
+  // ===== B2 - INTERMEDIÁRIO AVANÇADO =====
+
+  {
+    id: 'b2-reorder-1',
+    type: 'reorder',
+    level: 'B2',
+    category: 'grammar',
+    question: 'Organize para formar a frase:',
+    words: ['had', 'if', 'I', 'studied', 'harder', 'I', 'would', 'have', 'passed', 'the', 'exam'],
+    correctAnswer: 'If I had studied harder I would have passed the exam',
+    explanation: 'Terceira condicional: If + past perfect, would have + particípio',
+    tags: ['conditionals', 'regrets', 'past']
+  },
+  {
+    id: 'b2-reorder-2',
+    type: 'reorder',
+    level: 'B2',
+    category: 'grammar',
+    question: 'Forme a frase passiva:',
+    words: ['the', 'book', 'was', 'written', 'by', 'Shakespeare'],
+    correctAnswer: 'The book was written by Shakespeare',
+    explanation: 'Voz passiva: be + particípio passado + by + agente',
+    tags: ['passive-voice', 'past-simple']
+  },
+
+  {
+    id: 'b2-complete-1',
+    type: 'complete',
+    level: 'B2',
+    category: 'grammar',
+    question: 'Complete com a estrutura apropriada:',
+    content: 'I wish I ___ more languages.',
+    options: ['spoke', 'speak', 'have spoken'],
+    correctAnswer: 'spoke',
+    explanation: 'I wish + passado simples para desejos presentes impossíveis',
+    tags: ['wishes', 'regrets', 'subjunctive']
+  },
+  {
+    id: 'b2-complete-2',
+    type: 'complete',
+    level: 'B2',
+    category: 'vocabulary',
+    question: 'Escolha a expressão idiomática correta:',
+    content: 'Learning English is not ___. It takes time and effort.',
+    options: ['a piece of cake', 'a hot potato', 'a bad apple'],
+    correctAnswer: 'a piece of cake',
+    explanation: '"A piece of cake" = algo muito fácil (usado aqui negativamente)',
+    tags: ['idioms', 'expressions']
+  },
+
+  {
+    id: 'b2-translate-1',
+    type: 'translate',
+    level: 'B2',
+    category: 'grammar',
+    question: 'Traduza mantendo o sentido:',
+    content: 'Quanto mais eu pratico, melhor eu fico.',
+    options: [
+      'The more I practice, the better I get.',
+      'More I practice, better I get.',
+      'If I practice more, I get better.'
+    ],
+    correctAnswer: 'The more I practice, the better I get.',
+    explanation: 'The + comparativo..., the + comparativo (quanto mais... mais)',
+    tags: ['comparatives', 'correlatives']
+  },
+
+  {
+    id: 'b2-context-1',
+    type: 'context',
+    level: 'B2',
+    category: 'vocabulary',
+    question: 'Como você expressa discordância de forma diplomática?',
+    options: [
+      'I see your point, but I\'m afraid I have to disagree.',
+      'You are completely wrong!',
+      'That doesn\'t make sense.'
+    ],
+    correctAnswer: 'I see your point, but I\'m afraid I have to disagree.',
+    explanation: 'Forma educada de discordar: reconhecer + expressar opinião',
+    tags: ['disagreement', 'polite-expressions', 'debate']
+  },
+
+  {
+    id: 'b2-build-1',
+    type: 'build',
+    level: 'B2',
+    category: 'vocabulary',
+    question: 'Construa uma frase usando todas as palavras:',
+    words: ['despite', 'challenges', 'managed', 'success'],
+    correctAnswer: 'Despite the challenges, we managed to achieve success',
+    hint: 'Use "despite" no início + vírgula',
+    explanation: 'Despite + substantivo, sujeito + verbo',
+    tags: ['connectors', 'complex-sentences']
+  },
+
+  // ===== EXERCÍCIOS DE ESCRITA (WRITING) =====
+  
+  // A1 - Escrita básica
+  {
+    id: 'a1-writing-1',
+    type: 'writing',
+    level: 'A1',
+    category: 'writing',
+    question: 'Escreva 3-4 frases sobre você (nome, idade, onde mora):',
+    minWords: 15,
+    maxWords: 40,
+    correctAnswer: 'Texto livre',
+    suggestedWords: ['name', 'am', 'years old', 'live', 'like'],
+    criterias: [
+      'Usar "My name is..."',
+      'Informar idade corretamente',
+      'Dizer onde mora',
+      'Adicionar algo que gosta'
+    ],
+    sampleAnswer: 'My name is Maria. I am 25 years old. I live in São Paulo. I like coffee and books.',
+    explanation: 'Apresentação básica: nome + idade + local + preferências',
+    tags: ['introductions', 'personal-info', 'basic-writing']
+  },
+  
+  {
+    id: 'a1-writing-2',
+    type: 'writing',
+    level: 'A1',
+    category: 'writing',
+    question: 'Descreva sua rotina matinal em 3-5 frases:',
+    minWords: 20,
+    maxWords: 50,
+    correctAnswer: 'Texto livre',
+    suggestedWords: ['wake up', 'brush teeth', 'have breakfast', 'go to work', 'every day'],
+    criterias: [
+      'Usar presente simples',
+      'Incluir pelo menos 3 atividades',
+      'Usar expressões de tempo',
+      'Ordem lógica das ações'
+    ],
+    sampleAnswer: 'I wake up at 7 AM every day. I brush my teeth and have breakfast. Then I go to work by bus. I start work at 9 AM.',
+    explanation: 'Rotina diária: presente simples + expressões de tempo',
+    tags: ['daily-routine', 'present-simple', 'basic-writing']
+  },
+
+  // A2 - Escrita elementar
+  {
+    id: 'a2-writing-1',
+    type: 'writing',
+    level: 'A2',
+    category: 'writing',
+    question: 'Escreva um e-mail curto para um amigo contando sobre seu final de semana (5-7 frases):',
+    minWords: 40,
+    maxWords: 80,
+    correctAnswer: 'Texto livre',
+    suggestedWords: ['Hi', 'How are you', 'weekend', 'went to', 'was', 'fun', 'See you soon'],
+    criterias: [
+      'Usar saudação apropriada',
+      'Usar passado simples',
+      'Contar pelo menos 2 atividades',
+      'Incluir despedida',
+      'Tom amigável'
+    ],
+    sampleAnswer: 'Hi John! How are you? My weekend was great! I went to the beach with my family on Saturday. The weather was perfect. On Sunday, I stayed home and watched movies. It was very relaxing. See you soon!',
+    explanation: 'E-mail informal: saudação + passado simples + despedida',
+    tags: ['email', 'past-simple', 'weekend-activities']
+  },
+
+  {
+    id: 'a2-writing-2',
+    type: 'writing',
+    level: 'A2',
+    category: 'writing',
+    question: 'Descreva seu melhor amigo ou amiga (aparência e personalidade) em 5-6 frases:',
+    minWords: 40,
+    maxWords: 70,
+    correctAnswer: 'Texto livre',
+    suggestedWords: ['tall', 'short', 'friendly', 'funny', 'kind', 'has', 'likes', 'always'],
+    criterias: [
+      'Descrever aparência física',
+      'Descrever personalidade',
+      'Usar adjetivos variados',
+      'Presente simples',
+      'Organização lógica'
+    ],
+    sampleAnswer: 'My best friend is Ana. She is tall and has long brown hair. She is very friendly and funny. She always makes me laugh. Ana likes reading and playing tennis. She is a very kind person.',
+    explanation: 'Descrição: aparência física + características de personalidade',
+    tags: ['descriptions', 'adjectives', 'present-simple', 'friendship']
+  },
+
+  // B1 - Escrita intermediária
+  {
+    id: 'b1-writing-1',
+    type: 'writing',
+    level: 'B1',
+    category: 'writing',
+    question: 'Escreva sobre uma viagem memorável que você fez. Descreva o lugar, o que você fez e por que foi especial (80-100 palavras):',
+    minWords: 80,
+    maxWords: 120,
+    correctAnswer: 'Texto livre',
+    suggestedWords: ['Last year', 'traveled to', 'amazing', 'visited', 'tried', 'experience', 'memorable', 'because'],
+    criterias: [
+      'Usar passado simples e contínuo',
+      'Descrever o local',
+      'Contar experiências',
+      'Expressar sentimentos',
+      'Usar conectores (and, but, because)',
+      'Conclusão sobre por que foi memorável'
+    ],
+    sampleAnswer: 'Last summer, I traveled to Paris with my family. It was an amazing experience. We visited the Eiffel Tower and the Louvre Museum. The city was beautiful and the food was delicious. I tried French pastries for the first time. We also walked along the Seine River at sunset. The view was incredible. This trip was memorable because I spent quality time with my family and experienced a new culture. I hope to visit Paris again someday.',
+    explanation: 'Narrativa de viagem: passado + descrições + sentimentos + conclusão',
+    tags: ['travel', 'narrative', 'past-tenses', 'experiences']
+  },
+
+  {
+    id: 'b1-writing-2',
+    type: 'writing',
+    level: 'B1',
+    category: 'writing',
+    question: 'Escreva um e-mail formal solicitando informações sobre um curso de inglês (70-90 palavras):',
+    minWords: 70,
+    maxWords: 100,
+    correctAnswer: 'Texto livre',
+    suggestedWords: ['Dear', 'I am writing', 'regarding', 'information', 'course', 'schedule', 'fees', 'look forward', 'Sincerely'],
+    criterias: [
+      'Usar saudação formal (Dear Sir/Madam)',
+      'Explicar o motivo do e-mail',
+      'Fazer perguntas específicas',
+      'Tom formal e educado',
+      'Despedida formal (Sincerely, Best regards)',
+      'Estrutura organizada'
+    ],
+    sampleAnswer: 'Dear Sir/Madam,\n\nI am writing to inquire about your English courses. I am interested in improving my speaking skills. Could you please provide information about the course schedule, duration, and fees? I would also like to know if there are online classes available. Additionally, do you offer placement tests for new students?\n\nI look forward to hearing from you soon.\n\nSincerely,\nMaria Silva',
+    explanation: 'E-mail formal: saudação + propósito + perguntas + despedida formal',
+    tags: ['formal-email', 'requests', 'formal-language', 'information']
+  },
+
+  // B2 - Escrita avançada intermediária
+  {
+    id: 'b2-writing-1',
+    type: 'writing',
+    level: 'B2',
+    category: 'writing',
+    question: 'Escreva sua opinião sobre o impacto das redes sociais na sociedade moderna. Apresente argumentos a favor e contra (120-150 palavras):',
+    minWords: 120,
+    maxWords: 160,
+    correctAnswer: 'Texto livre',
+    suggestedWords: ['In my opinion', 'On one hand', 'On the other hand', 'However', 'Furthermore', 'In conclusion', 'impact', 'society', 'benefits', 'drawbacks'],
+    criterias: [
+      'Introdução clara do tema',
+      'Apresentar aspectos positivos',
+      'Apresentar aspectos negativos',
+      'Usar conectores (However, Furthermore, Moreover)',
+      'Expressar opinião pessoal',
+      'Conclusão clara',
+      'Vocabulário variado e sofisticado'
+    ],
+    sampleAnswer: 'Social media has dramatically transformed modern society in numerous ways. On one hand, these platforms have revolutionized communication, enabling people to connect instantly across the globe. They provide valuable opportunities for networking, learning, and raising awareness about important issues. Furthermore, they have democratized information access.\n\nOn the other hand, social media has significant drawbacks. Many people experience anxiety and depression due to constant comparison with others. Privacy concerns are growing, and misinformation spreads rapidly. Moreover, excessive use can lead to addiction and reduced face-to-face interactions.\n\nIn my opinion, while social media offers tremendous benefits, we must use these platforms mindfully and maintain a healthy balance with offline activities.',
+    explanation: 'Texto argumentativo: introdução + argumentos prós e contras + opinião + conclusão',
+    tags: ['opinion', 'argumentative', 'social-media', 'advantages-disadvantages']
+  },
+
+  {
+    id: 'b2-writing-2',
+    type: 'writing',
+    level: 'B2',
+    category: 'writing',
+    question: 'Escreva uma carta de motivação para uma vaga de emprego (100-130 palavras):',
+    minWords: 100,
+    maxWords: 140,
+    correctAnswer: 'Texto livre',
+    suggestedWords: ['I am applying', 'position', 'experience', 'skills', 'qualified', 'contribute', 'opportunity', 'enclosed', 'resume'],
+    criterias: [
+      'Mencionar a vaga específica',
+      'Destacar experiência relevante',
+      'Mencionar habilidades',
+      'Mostrar interesse genuíno',
+      'Tom profissional e persuasivo',
+      'Estrutura formal',
+      'Solicitar entrevista'
+    ],
+    sampleAnswer: 'Dear Hiring Manager,\n\nI am writing to apply for the Marketing Coordinator position at your company. With three years of experience in digital marketing and a proven track record of successful campaigns, I am confident I can contribute significantly to your team.\n\nMy experience includes managing social media strategies, analyzing market trends, and coordinating with creative teams. I am particularly skilled in content creation and data analysis. I am drawn to your company because of its innovative approach to sustainable marketing.\n\nI am enthusiastic about the opportunity to bring my expertise to your organization. I have enclosed my resume for your review and would welcome the chance to discuss how I can contribute to your team\'s success.\n\nThank you for your consideration.\n\nBest regards,\nJohn Smith',
+    explanation: 'Carta de motivação: apresentação + experiência + habilidades + interesse + fechamento',
+    tags: ['cover-letter', 'job-application', 'formal-writing', 'professional']
+  },
+
+  // C1 - Escrita avançada
+  {
+    id: 'c1-writing-1',
+    type: 'writing',
+    level: 'C1',
+    category: 'writing',
+    question: 'Escreva um ensaio analisando como a tecnologia está mudando o mercado de trabalho e quais habilidades serão essenciais no futuro (150-180 palavras):',
+    minWords: 150,
+    maxWords: 200,
+    correctAnswer: 'Texto livre',
+    suggestedWords: ['transformation', 'automation', 'workforce', 'inevitable', 'adaptation', 'essential', 'competencies', 'paradigm shift', 'sophisticated'],
+    criterias: [
+      'Tese clara e bem definida',
+      'Análise aprofundada',
+      'Exemplos concretos',
+      'Vocabulário acadêmico',
+      'Estrutura de ensaio (introdução, desenvolvimento, conclusão)',
+      'Uso de conectores complexos',
+      'Tom formal e objetivo',
+      'Coesão e coerência'
+    ],
+    sampleAnswer: 'The rapid advancement of technology is fundamentally reshaping the employment landscape, necessitating a paradigm shift in workforce development. Automation and artificial intelligence are increasingly replacing routine tasks, while simultaneously creating demand for sophisticated skill sets.\n\nAdaptability has emerged as perhaps the most crucial competency in this evolving environment. Workers must demonstrate not only technical proficiency but also critical thinking, emotional intelligence, and creativity—attributes that machines cannot easily replicate. Furthermore, continuous learning has become imperative rather than optional, as the half-life of technical skills continues to diminish.\n\nCollaboration across disciplines will be equally vital. The complex challenges facing organizations require interdisciplinary approaches, making the ability to work effectively in diverse teams essential. Moreover, digital literacy extends beyond mere technical knowledge to encompass understanding cybersecurity, data privacy, and ethical implications of technology.\n\nIn conclusion, thriving in tomorrow\'s workplace demands a holistic skill set combining technical expertise with uniquely human capabilities. Those who embrace lifelong learning and cultivate adaptability will be best positioned for success.',
+    explanation: 'Ensaio acadêmico: tese + análise + argumentação + exemplos + conclusão',
+    tags: ['essay', 'academic-writing', 'analysis', 'future-work', 'technology']
+  }
+];
