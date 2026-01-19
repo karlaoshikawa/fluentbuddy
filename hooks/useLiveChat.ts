@@ -38,6 +38,8 @@ export function useLiveChat(
   const currentOutputText = useRef('');
 
   const stopSession = useCallback(() => {
+    console.log('🛑 Parando sessão...');
+    
     if (scriptProcessorRef.current) {
       scriptProcessorRef.current.disconnect();
       scriptProcessorRef.current = null;
@@ -63,16 +65,19 @@ export function useLiveChat(
       sessionPromiseRef.current = null;
     }
 
-    if (inputAudioCtxRef.current) {
-      inputAudioCtxRef.current.close().catch(() => {});
-      inputAudioCtxRef.current = null;
-    }
-    if (outputAudioCtxRef.current) {
-      outputAudioCtxRef.current.close().catch(() => {});
-      outputAudioCtxRef.current = null;
-    }
+    // NÃO fechar os AudioContexts aqui - deixar para o startSession
+    // Isso evita problemas de timing na reconexão
+    // if (inputAudioCtxRef.current) {
+    //   inputAudioCtxRef.current.close().catch(() => {});
+    //   inputAudioCtxRef.current = null;
+    // }
+    // if (outputAudioCtxRef.current) {
+    //   outputAudioCtxRef.current.close().catch(() => {});
+    //   outputAudioCtxRef.current = null;
+    // }
 
     setStatus(ConnectionStatus.DISCONNECTED);
+    console.log('✅ Sessão parada');
   }, []);
 
   const startSession = useCallback(async () => {
@@ -162,6 +167,15 @@ export function useLiveChat(
 
       // Modo VOZ - Só inicializar áudio se estiver habilitado
       const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext);
+      
+      // IMPORTANTE: Sempre fechar contextos antigos antes de criar novos
+      if (inputAudioCtxRef.current && inputAudioCtxRef.current.state !== 'closed') {
+        await inputAudioCtxRef.current.close().catch(() => {});
+      }
+      if (outputAudioCtxRef.current && outputAudioCtxRef.current.state !== 'closed') {
+        await outputAudioCtxRef.current.close().catch(() => {});
+      }
+      
       inputAudioCtxRef.current = new AudioCtx({ sampleRate: 16000 });
       outputAudioCtxRef.current = new AudioCtx({ sampleRate: 24000 });
 
@@ -170,13 +184,15 @@ export function useLiveChat(
         outputAudioCtxRef.current.resume()
       ]);
       
+      console.log('🎧 AudioContexts criados - Input:', inputAudioCtxRef.current.state, 'Output:', outputAudioCtxRef.current.state);
+      
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStreamRef.current = stream;
       
       const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         config: {
-          responseModalities: [Modality.AUDIO],
+          responseModalities: [Modality.AUDIO], // Manter áudio apenas - se falhar, cai no texto
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: persona.voice as any } },
           },
@@ -186,10 +202,15 @@ export function useLiveChat(
         },
         callbacks: {
           onopen: () => {
+            console.log('✅ Sessão de VOZ aberta com sucesso');
             setStatus(ConnectionStatus.CONNECTED);
             
-            if (!inputAudioCtxRef.current || !micStreamRef.current) return;
+            if (!inputAudioCtxRef.current || !micStreamRef.current) {
+              console.error('❌ AudioContext ou micStream não disponíveis no onopen');
+              return;
+            }
 
+            console.log('🎤 Configurando captura de microfone...');
             const source = inputAudioCtxRef.current.createMediaStreamSource(micStreamRef.current);
             const scriptProcessor = inputAudioCtxRef.current.createScriptProcessor(4096, 1, 1);
             scriptProcessorRef.current = scriptProcessor;
@@ -274,7 +295,15 @@ export function useLiveChat(
           onmessage: async (message: LiveServerMessage) => {
             const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
             if (base64Audio && outputAudioCtxRef.current) {
+              console.log('🔊 Áudio recebido da IA - Decodificando e reproduzindo...');
               const ctx = outputAudioCtxRef.current;
+              
+              // Verificar se o contexto está ativo
+              if (ctx.state !== 'running') {
+                console.warn('⚠️ AudioContext não está em execução:', ctx.state);
+                await ctx.resume();
+              }
+              
               nextStartTimeRef.current = Math.max(nextStartTimeRef.current, ctx.currentTime);
               const audioBuffer = await decodeAudioData(decode(base64Audio), ctx, 24000, 1);
               const sourceNode = ctx.createBufferSource();
@@ -284,6 +313,9 @@ export function useLiveChat(
               sourceNode.start(nextStartTimeRef.current);
               nextStartTimeRef.current += audioBuffer.duration;
               sourcesRef.current.add(sourceNode);
+              console.log('✅ Áudio reproduzido com sucesso');
+            } else if (!base64Audio && message.serverContent?.modelTurn) {
+              console.warn('⚠️ Resposta recebida mas SEM áudio - Verificar se modelo está retornando áudio');
             }
 
             if (message.serverContent?.inputTranscription) {
