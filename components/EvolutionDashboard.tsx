@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { UserStats } from '../types';
-import { Renew } from '@carbon/icons-react';
+import { Renew, ChevronUp, ChevronDown } from '@carbon/icons-react';
 
 interface EvolutionDashboardProps {
   stats: UserStats;
@@ -9,6 +9,8 @@ interface EvolutionDashboardProps {
 }
 
 const EvolutionDashboard: React.FC<EvolutionDashboardProps> = ({ stats, isAssessing }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  
   const getLevelColor = (level: string) => {
     if (level.startsWith('A')) return 'bg-slate-600';
     if (level.startsWith('B')) return 'bg-slate-700';
@@ -31,7 +33,7 @@ const EvolutionDashboard: React.FC<EvolutionDashboardProps> = ({ stats, isAssess
   );
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6 relative overflow-hidden">
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm relative overflow-hidden">
       {isAssessing && (
         <div className="absolute inset-0 bg-white bg-opacity-60 flex items-center justify-center z-10 backdrop-blur-[1px]">
           <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs animate-pulse">
@@ -41,23 +43,41 @@ const EvolutionDashboard: React.FC<EvolutionDashboardProps> = ({ stats, isAssess
         </div>
       )}
 
-      <div className="flex items-center space-x-3">
-        <div className={`${getLevelColor(stats.level)} text-white w-14 h-14 rounded-xl flex flex-col items-center justify-center shadow-lg transform rotate-3 transition-colors duration-500`}>
-          <span className="text-xs font-bold leading-none">LEVEL</span>
-          <span className="text-2xl font-black">{stats.level}</span>
+      <div className="p-4 flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
+        <div className="flex items-center space-x-3">
+          <div className={`${getLevelColor(stats.level)} text-white w-14 h-14 rounded-xl flex flex-col items-center justify-center shadow-lg transform rotate-3 transition-colors duration-500`}>
+            <span className="text-xs font-bold leading-none">LEVEL</span>
+            <span className="text-2xl font-black">{stats.level}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Status CEFR</span>
+            <span className="text-sm font-bold text-gray-700">
+              {stats.level.startsWith('A') ? 'Basic User' : stats.level.startsWith('B') ? 'Independent User' : 'Proficient User'}
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Status CEFR</span>
-          <span className="text-sm font-bold text-gray-700">
-            {stats.level.startsWith('A') ? 'Basic User' : stats.level.startsWith('B') ? 'Independent User' : 'Proficient User'}
-          </span>
-        </div>
-      </div>
 
-      <div className="flex-1 w-full grid grid-cols-3 gap-4">
-        <ProgressBar label="Grammar" value={stats.grammar} color="bg-slate-600" />
-        <ProgressBar label="Vocabulary" value={stats.vocabulary} color="bg-slate-700" />
-        <ProgressBar label="Communication" value={stats.communication} color="bg-slate-800" />
+        <div 
+          className={`flex-1 w-full grid grid-cols-3 gap-4 transition-all duration-300 overflow-hidden ${
+            isExpanded ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0'
+          }`}
+        >
+          <ProgressBar label="Grammar" value={stats.grammar} color="bg-slate-600" />
+          <ProgressBar label="Vocabulary" value={stats.vocabulary} color="bg-slate-700" />
+          <ProgressBar label="Communication" value={stats.communication} color="bg-slate-800" />
+        </div>
+
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="ml-auto p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          title={isExpanded ? "Retrair" : "Expandir"}
+        >
+          {isExpanded ? (
+            <ChevronUp size={20} className="text-gray-500" />
+          ) : (
+            <ChevronDown size={20} className="text-gray-500" />
+          )}
+        </button>
       </div>
     </div>
   );

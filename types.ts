@@ -127,3 +127,24 @@ export interface UserExerciseData {
   lastPracticeDate: Date;
   lastSyncDate?: Date;
 }
+
+// ===== Sistema de Conversação =====
+
+export type ConversationMode = 'free' | 'structured';
+
+export interface TopicTimeTracking {
+  topicIndex: number;
+  timeSpentMinutes: number; // Tempo real gasto
+  sessionsCompleted: number; // Sessões realmente feitas
+  lastSessionDate: Date;
+}
+
+export interface StructuredPlanProgress {
+  currentTopicIndex: number; // índice do tópico atual no plano
+  topicsCompleted: string[]; // IDs dos tópicos já completados
+  currentSessionGoal?: string; // Objetivo da sessão atual
+  lastSessionDate: Date;
+  totalSessions: number;
+  timeTracking: Record<number, TopicTimeTracking>; // tracking por tópico
+  currentSessionStartTime?: number; // timestamp do início da sessão atual
+}

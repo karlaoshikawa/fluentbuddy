@@ -10,7 +10,9 @@ export function useLiveChat(
   userLevel: CEFRLevel = 'B1', 
   onTurnComplete?: (entries: TranscriptionEntry[]) => void,
   learningContext?: string,
-  enableAudio: boolean = true
+  enableAudio: boolean = true,
+  enableVAD: boolean = true, // NOVO: opção para desabilitar VAD
+  onTopicAdvancement?: () => void // NOVO: callback quando IA decidir avançar tópico
 ) {
   const [status, setStatus] = useState<ConnectionStatus>(ConnectionStatus.DISCONNECTED);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -29,8 +31,8 @@ export function useLiveChat(
   const vadRef = useRef<VoiceActivityDetector>(new VoiceActivityDetector());
   const silenceFramesRef = useRef<number>(0);
   const voiceFramesRef = useRef<number>(0);
-  const SILENCE_THRESHOLD = 10; // Frames de silêncio antes de parar de enviar
-  const VOICE_THRESHOLD = 2; // Frames com voz antes de começar a enviar
+  const SILENCE_THRESHOLD = 20; // Aumentado de 10 para 20 (tolera pausas maiores)
+  const VOICE_THRESHOLD = 1; // Reduzido de 2 para 1 (mais responsivo)
 
   const currentInputText = useRef('');
   const currentOutputText = useRef('');
@@ -107,6 +109,27 @@ export function useLiveChat(
                   // Não adicionar currentInputText aqui pois já foi adicionado em sendTextMessage
                   if (currentOutputText.current) newEntries.push({ role: 'teacher', text: currentOutputText.current, timestamp: new Date() });
                   
+                  // Detectar se a IA está avançando o tópico
+                  const advancementPhrases = [
+                    'move to the next topic',
+                    'moving to the next topic',
+                    "let's move to",
+                    'next topic',
+                    "you've mastered",
+                    'excellent work! you',
+                    'great job! now',
+                  ];
+                  
+                  const responseText = currentOutputText.current.toLowerCase();
+                  const isAdvancing = advancementPhrases.some(phrase => responseText.includes(phrase));
+                  
+                  if (isAdvancing && onTopicAdvancement) {
+                    // Chamar callback após 2 segundos para dar tempo do aluno ler
+                    setTimeout(() => {
+                      onTopicAdvancement();
+                    }, 2000);
+                  }
+                  
                   setTranscriptions(prev => {
                     const updated = [...prev, ...newEntries];
                     if (onTurnComplete) onTurnComplete(updated);
@@ -176,6 +199,28 @@ export function useLiveChat(
               
               const inputData = e.inputBuffer.getChannelData(0);
               
+              // Se VAD estiver desabilitado, enviar tudo sem filtros
+              if (!enableVAD) {
+                const int16 = new Int16Array(inputData.length);
+                for (let i = 0; i < inputData.length; i++) {
+                  int16[i] = inputData[i] * 32768;
+                }
+                
+                const pcmBlob = {
+                  data: encode(new Uint8Array(int16.buffer)),
+                  mimeType: 'audio/pcm;rate=16000',
+                };
+
+                sessionPromise.then((session) => {
+                  session.sendRealtimeInput({ media: pcmBlob });
+                }).catch((err) => {
+                  if (err?.name !== 'AbortError') {
+                    console.error('❌ Erro ao enviar áudio:', err);
+                  }
+                });
+                return;
+              }
+              
               // NOVO: Detecção de atividade de voz (VAD)
               const hasVoice = vadRef.current.isVoicePresent(inputData);
               
@@ -187,19 +232,19 @@ export function useLiveChat(
                 voiceFramesRef.current = 0;
               }
               
-              // Só enviar se:
-              // 1. Detectou voz consistente (pelo menos VOICE_THRESHOLD frames) OU
-              // 2. Já estava enviando e ainda não teve silêncio prolongado
+              // Lógica de envio mais permissiva:
+              // 1. Detectou voz (pelo menos 1 frame) OU
+              // 2. Já estava enviando e ainda não teve silêncio muito prolongado
               const shouldSend = voiceFramesRef.current >= VOICE_THRESHOLD || 
                                 (silenceFramesRef.current < SILENCE_THRESHOLD && silenceFramesRef.current > 0);
               
               if (!shouldSend) {
-                // console.log('🔇 Silêncio/ruído detectado - não enviando');
-                return; // NÃO ENVIAR ruído/silêncio
+                // console.log('🔇 Silêncio prolongado detectado - não enviando');
+                return; // NÃO ENVIAR apenas em silêncio prolongado
               }
               
-              // NOVO: Aplicar noise gate para remover ruído de fundo
-              const cleanedData = applyNoiseGate(inputData, 0.01);
+              // NOVO: Aplicar noise gate suave (threshold reduzido)
+              const cleanedData = applyNoiseGate(inputData, 0.005); // Reduzido de 0.01 para 0.005
               
               // Converter para Int16
               const int16 = new Int16Array(cleanedData.length);
@@ -253,6 +298,27 @@ export function useLiveChat(
                 const newEntries: TranscriptionEntry[] = [];
                 if (currentInputText.current) newEntries.push({ role: 'user', text: currentInputText.current, timestamp: new Date() });
                 if (currentOutputText.current) newEntries.push({ role: 'teacher', text: currentOutputText.current, timestamp: new Date() });
+                
+                // Detectar se a IA está avançando o tópico
+                const advancementPhrases = [
+                  'move to the next topic',
+                  'moving to the next topic',
+                  "let's move to",
+                  'next topic',
+                  "you've mastered",
+                  'excellent work! you',
+                  'great job! now',
+                ];
+                
+                const responseText = currentOutputText.current.toLowerCase();
+                const isAdvancing = advancementPhrases.some(phrase => responseText.includes(phrase));
+                
+                if (isAdvancing && onTopicAdvancement) {
+                  // Chamar callback após 2 segundos para dar tempo do aluno ler/ouvir
+                  setTimeout(() => {
+                    onTopicAdvancement();
+                  }, 2000);
+                }
                 
                 setTranscriptions(prev => {
                   const updated = [...prev, ...newEntries];

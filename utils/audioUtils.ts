@@ -33,13 +33,21 @@ export function detectVoiceActivity(audioData: Float32Array, threshold: number =
 }
 
 // Aplicar noise gate para remover ruído de fundo
-export function applyNoiseGate(audioData: Float32Array, threshold: number = 0.01): Float32Array {
+export function applyNoiseGate(audioData: Float32Array, threshold: number = 0.005): Float32Array {
   const processed = new Float32Array(audioData.length);
   
   for (let i = 0; i < audioData.length; i++) {
     const amplitude = Math.abs(audioData[i]);
-    // Se amplitude é menor que threshold, zerar (remover ruído)
-    processed[i] = amplitude > threshold ? audioData[i] : 0;
+    // Noise gate mais suave: usa fade ao invés de corte abrupto
+    if (amplitude > threshold) {
+      processed[i] = audioData[i];
+    } else if (amplitude > threshold * 0.5) {
+      // Fade suave entre 50% e 100% do threshold
+      const fade = (amplitude - threshold * 0.5) / (threshold * 0.5);
+      processed[i] = audioData[i] * fade;
+    } else {
+      processed[i] = 0;
+    }
   }
   
   return processed;
@@ -49,8 +57,8 @@ export function applyNoiseGate(audioData: Float32Array, threshold: number = 0.01
 export class VoiceActivityDetector {
   private energyHistory: number[] = [];
   private readonly historySize = 10;
-  private readonly energyThreshold = 0.015;
-  private readonly zeroCrossingThreshold = 0.1;
+  private readonly energyThreshold = 0.008; // Reduzido de 0.015 para 0.008 (mais sensível)
+  private readonly zeroCrossingThreshold = 0.05; // Reduzido de 0.1 para 0.05 (mais permissivo)
   
   // Detecta se há voz usando múltiplos critérios
   public isVoicePresent(audioData: Float32Array): boolean {
@@ -68,12 +76,13 @@ export class VoiceActivityDetector {
     
     // Calcular threshold adaptativo baseado no histórico
     const avgEnergy = this.energyHistory.reduce((a, b) => a + b, 0) / this.energyHistory.length;
-    const adaptiveThreshold = Math.max(this.energyThreshold, avgEnergy * 1.5);
+    const adaptiveThreshold = Math.max(this.energyThreshold, avgEnergy * 1.2); // Reduzido de 1.5 para 1.2
     
     // Voz detectada se:
-    // - RMS acima do threshold adaptativo E
-    // - Zero-crossing rate indica frequências de fala
-    return rms > adaptiveThreshold && zcr > this.zeroCrossingThreshold && zcr < 0.5;
+    // - RMS acima do threshold adaptativo OU
+    // - (RMS moderado E zero-crossing rate indica fala)
+    // Mais permissivo: usa OR ao invés de AND estrito
+    return rms > adaptiveThreshold || (rms > this.energyThreshold * 0.5 && zcr > this.zeroCrossingThreshold && zcr < 0.6);
   }
   
   private calculateRMS(data: Float32Array): number {

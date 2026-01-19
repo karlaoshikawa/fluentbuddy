@@ -165,6 +165,21 @@ export const CEFR_LEVEL_REQUIREMENTS: Record<CEFRLevel, LevelRequirements> = {
         name: 'Basic Sounds',
         description: 'Common consonant and vowel sounds',
         examples: ['/θ/ - think', '/ð/ - this', '/ŋ/ - sing']
+      },
+      
+      // FALSE COGNATES (Falsos Cognatos)
+      {
+        id: 'a1-false-cognates-basic',
+        category: 'vocabulary',
+        name: 'Falsos Cognatos Básicos',
+        description: 'Palavras que parecem português mas têm significado diferente',
+        examples: [
+          'actually = na verdade (não "atualmente")',
+          'parents = pais (não "parentes")',
+          'library = biblioteca (não "livraria")',
+          'college = faculdade (não "colégio")',
+          'lunch = almoço (não "lanche")'
+        ]
       }
     ]
   },
@@ -317,6 +332,24 @@ export const CEFR_LEVEL_REQUIREMENTS: Record<CEFRLevel, LevelRequirements> = {
         name: '-ed Endings',
         description: 'Three pronunciations of -ed',
         examples: ['/t/ - worked, helped', '/d/ - played, opened', '/ɪd/ - wanted, needed']
+      },
+      
+      // FALSE COGNATES (Falsos Cognatos)
+      {
+        id: 'a2-false-cognates-intermediate',
+        category: 'vocabulary',
+        name: 'Falsos Cognatos Intermediários',
+        description: 'Mais falsos cognatos comuns do dia a dia',
+        examples: [
+          'pretend = fingir (não "pretender")',
+          'eventually = finalmente (não "eventualmente")',
+          'fabric = tecido (não "fábrica")',
+          'sensible = sensato (não "sensível")',
+          'exit = saída (não "êxito")',
+          'costume = fantasia (não "costume")',
+          'novel = romance (livro) (não "novela")',
+          'push = empurrar (não "puxar")'
+        ]
       }
     ]
   },
@@ -476,6 +509,26 @@ export const CEFR_LEVEL_REQUIREMENTS: Record<CEFRLevel, LevelRequirements> = {
         name: 'Linking Sounds',
         description: 'Connect words smoothly',
         examples: ['an apple = /ənæpəl/', 'turn off = /tɜrnɔf/', 'at all = /ətɔl/']
+      },
+      
+      // FALSE COGNATES (Falsos Cognatos)
+      {
+        id: 'b1-false-cognates-advanced',
+        category: 'vocabulary',
+        name: 'Falsos Cognatos Avançados',
+        description: 'Falsos cognatos mais complexos e sutis',
+        examples: [
+          'attend = comparecer (não "atender")',
+          'intend = pretender (não "entender")',
+          'realize = perceber (não "realizar")',
+          'resume = retomar (não "resumir")',
+          'compromise = acordo (não "compromisso")',
+          'sympathy = compaixão (não "simpatia")',
+          'contest = competição (não "contexto")',
+          'particular = específico (não "particular/privado")',
+          'service = atendimento (não apenas "serviço")',
+          'motto = lema (não "moto/motocicleta")'
+        ]
       }
     ]
   },
@@ -628,6 +681,28 @@ export const CEFR_LEVEL_REQUIREMENTS: Record<CEFRLevel, LevelRequirements> = {
         name: 'Sentence Stress',
         description: 'Stress content words for meaning',
         examples: ['I DIDN\'T say he stole it', 'I didn\'t SAY he stole it', 'I didn\'t say HE stole it']
+      },
+      
+      // FALSE COGNATES (Falsos Cognatos)
+      {
+        id: 'b2-false-cognates-professional',
+        category: 'vocabulary',
+        name: 'False Cognates - Professional',
+        description: 'Falsos cognatos em contextos profissionais e acadêmicos',
+        examples: [
+          'expert = especialista (não "esperto/clever")',
+          'argument = discussão/debate (não "argumento/point")',
+          'lecture = palestra (não "leitura/reading")',
+          'recipe = receita culinária (não "receita médica/prescription")',
+          'stranger = desconhecido (não "estrangeiro/foreigner")',
+          'actually = na verdade (não "atualmente/currently")',
+          'assist = auxiliar (não "assistir/watch")',
+          'support = apoiar (não "suportar/tolerate")',
+          'collar = gola (não "colar/necklace")',
+          'legend = lenda (não "legenda/subtitle")',
+          'prejudice = preconceito (não "prejuízo/damage")',
+          'data = dados (não "data/date")'
+        ]
       }
     ]
   },
@@ -780,6 +855,31 @@ export const CEFR_LEVEL_REQUIREMENTS: Record<CEFRLevel, LevelRequirements> = {
         name: 'Discourse Markers',
         description: 'Pronunciation of discourse markers',
         examples: ['Well, you know, I mean', 'So, anyway, basically', 'Actually, in fact']
+      },
+      
+      // FALSE COGNATES (Falsos Cognatos)
+      {
+        id: 'c1-false-cognates-academic',
+        category: 'vocabulary',
+        name: 'False Cognates - Academic',
+        description: 'Falsos cognatos em contextos acadêmicos e formais',
+        examples: [
+          'comprehensive = abrangente (não "compreensível/understandable")',
+          'sensible = sensato (não "sensível/sensitive")',
+          'definitive = definitivo/conclusivo (não "definitivo/final" em todos os contextos)',
+          'ultimate = final/supremo (não "último" no tempo)',
+          'notorious = infame (não "notório/well-known" positivamente)',
+          'eventual = final/resultante (não "eventual/occasional")',
+          'consistent = coerente (não apenas "consistente")',
+          'informal = não oficial (não apenas "informal/casual")',
+          'commodity = mercadoria (não "comodidade/convenience")',
+          'fabric = tecido (não "fábrica/factory")',
+          'editor = redator (não "editor/publisher")',
+          'prospect = perspectiva/possibilidade (não "prospecto/brochure")',
+          'sensitive = sensível (não "sensitivo/sensory")',
+          'injury = lesão (não "injúria/insult")',
+          'disgrace = desonra (não "desgraça/misfortune")'
+        ]
       }
     ]
   },
@@ -897,6 +997,31 @@ export const CEFR_LEVEL_REQUIREMENTS: Record<CEFRLevel, LevelRequirements> = {
         name: 'Near-Perfect Pronunciation',
         description: 'Minimal accent interference',
         examples: ['All sounds produced accurately', 'Natural prosody', 'Appropriate intonation']
+      },
+      
+      // FALSE COGNATES (Falsos Cognatos)
+      {
+        id: 'c2-false-cognates-nuanced',
+        category: 'vocabulary',
+        name: 'False Cognates - Nuanced',
+        description: 'Falsos cognatos com nuances sutis e contextos específicos',
+        examples: [
+          'exquisite = requintado/refinado (não "esquisito/weird")',
+          'deception = engano (não "decepção/disappointment")',
+          'disgust = nojo (não "desgosto/sorrow")',
+          'anticipate = prever/esperar (não apenas "antecipar")',
+          'preserve = conservar (não "preservativo/condom")',
+          'intoxication = embriaguez (não "intoxicação alimentar/food poisoning")',
+          'genial = cordial/afável (não "genial/brilliant")',
+          'diversion = desvio/distração (não "diversão/fun")',
+          'ordinance = decreto/portaria (não "ordenança/orderly")',
+          'casualty = vítima/baixa (não "casualidade/chance")',
+          'propaganda = material promocional (não "propaganda/advertising" comercial)',
+          'scholar = acadêmico/estudioso (não "escolar/student")',
+          'resume = curriculum vitae (não "resumo/summary")',
+          'idiom = expressão idiomática (não "idioma/language")',
+          'delirium = delírio patológico (não "delírio" figurativo)'
+        ]
       }
     ]
   }

@@ -10,6 +10,7 @@ import PronunciationPanel from './components/PronunciationPanel';
 import EvolutionDashboard from './components/EvolutionDashboard';
 import { useProgressTracker } from './hooks/useProgressTracker';
 import { useLearningProgress } from './hooks/useLearningProgress';
+import { useStructuredPlan } from './hooks/useStructuredPlan';
 import { LearningProgressSummary } from './components/LearningProgressSummary';
 import { LearningPath } from './components/LearningPath';
 import { ReviewReminder } from './components/ReviewReminder';
@@ -17,7 +18,8 @@ import { Login } from './components/Login';
 import { LevelTest } from './components/LevelTest';
 import { VocabularyExercises } from './components/VocabularyExercises';
 import { RequirementNotification, setNotificationCallback } from './components/RequirementNotification';
-import { ArrowLeft, Send, Microphone, MicrophoneOff, Stop, Book, Logout, Play, Edit, Education } from '@carbon/icons-react';
+import { AUDIO_CONFIG } from './constants';
+import { ArrowLeft, Send, Microphone, MicrophoneOff, Stop, Book, Logout, Play, Edit, Education, ChevronUp, ChevronDown } from '@carbon/icons-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -26,9 +28,11 @@ const App: React.FC = () => {
   const [showLearningPath, setShowLearningPath] = useState(false);
   const [showExercises, setShowExercises] = useState(false);
   const [studyMode, setStudyMode] = useState<'voice' | 'text'>('voice');
+  const [conversationMode, setConversationMode] = useState<'free' | 'structured'>('free');
   const [textInput, setTextInput] = useState('');
   const [showLevelTest, setShowLevelTest] = useState(false);
   const [notification, setNotification] = useState<{ show: boolean; name: string }>({ show: false, name: '' });
+  const [isStructuredPlanExpanded, setIsStructuredPlanExpanded] = useState(true);
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   
   // Verificar autenticação e teste de nível ao carregar
@@ -71,7 +75,28 @@ const App: React.FC = () => {
     getItemsDueForReview, 
     getUpcomingReviews 
   } = useLearningProgress(stats.level);
-  const learningContext = getAIContext();
+  
+  // Sistema de plano estruturado
+  const {
+    currentTopic,
+    allTopics,
+    progress: structuredProgress,
+    planProgress,
+    completeCurrentTopic,
+    goToPreviousTopic,
+    skipToNextTopic,
+    startSession: startStructuredSession,
+    endSession: endStructuredSession,
+    getTopicStats,
+    getStructuredContext
+  } = useStructuredPlan(stats.level);
+  
+  const topicStats = getTopicStats();
+  
+  // Contexto dinâmico baseado no modo de conversação
+  const learningContext = conversationMode === 'structured' 
+    ? getStructuredContext() 
+    : getAIContext();
   
   const dueForReview = getItemsDueForReview();
   const upcomingReviews = getUpcomingReviews(7);
@@ -85,16 +110,38 @@ const App: React.FC = () => {
     startSession, 
     stopSession,
     sendTextMessage
-  } = useLiveChat(selectedPersona, stats.level, runAssessment, learningContext, studyMode === 'voice');
+  } = useLiveChat(
+    selectedPersona, 
+    stats.level, 
+    runAssessment, 
+    learningContext, 
+    studyMode === 'voice',
+    AUDIO_CONFIG.ENABLE_VAD, // Usar configuração global do VAD
+    // Callback para quando IA decidir avançar tópico (somente no modo estruturado)
+    conversationMode === 'structured' ? () => {
+      completeCurrentTopic();
+      // Mostrar notificação de avanço
+      setNotification({ 
+        show: true, 
+        name: `Tópico completado: ${currentTopic.title}! 🎉` 
+      });
+    } : undefined
+  );
 
   const { analyze, isAnalyzing, result, clear } = usePronunciationAnalysis();
 
   const handleStart = async () => {
     setHasStarted(true);
+    if (conversationMode === 'structured') {
+      startStructuredSession(); // Iniciar tracking de tempo
+    }
     await startSession();
   };
 
   const handleBack = () => {
+    if (conversationMode === 'structured') {
+      endStructuredSession(); // Finalizar tracking de tempo
+    }
     if (showExercises) {
       setShowExercises(false);
     } else if (showLearningPath) {
@@ -277,6 +324,62 @@ const App: React.FC = () => {
                 </div>
               </div>
 
+              {/* Tipo de Conversação - NOVO */}
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-gray-700 mb-3">Tipo de Conversação:</label>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setConversationMode('free')}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${
+                      conversationMode === 'free' 
+                        ? 'border-slate-600 bg-slate-50 shadow-md' 
+                        : 'border-gray-200 hover:border-slate-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Microphone size={16} className="text-slate-600" />
+                      <div className="font-semibold text-gray-900 text-sm">Conversação Livre</div>
+                    </div>
+                    <div className="text-xs text-gray-600">Fale sobre qualquer assunto que quiser</div>
+                  </button>
+                  <button
+                    onClick={() => setConversationMode('structured')}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${
+                      conversationMode === 'structured' 
+                        ? 'border-slate-600 bg-slate-50 shadow-md' 
+                        : 'border-gray-200 hover:border-slate-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Education size={16} className="text-slate-600" />
+                      <div className="font-semibold text-gray-900 text-sm">Plano Estruturado → C2</div>
+                    </div>
+                    <div className="text-xs text-gray-600">Siga um plano progressivo para alcançar fluência nativa</div>
+                    {conversationMode === 'structured' && (
+                      <div className="mt-3 pt-3 border-t border-slate-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-gray-500 uppercase">Seu Progresso</span>
+                          <span className="text-xs font-bold text-slate-700">{structuredProgress}%</span>
+                        </div>
+                        <div className="bg-gray-200 rounded-full h-2 mb-2">
+                          <div 
+                            className="bg-slate-600 h-2 rounded-full transition-all duration-500"
+                            style={{ width: `${structuredProgress}%` }}
+                          />
+                        </div>
+                        <div className="text-[10px] text-gray-500 space-y-1">
+                          <div>Próximo: <span className="font-semibold text-gray-700">{currentTopic.title}</span></div>
+                          <div className="flex items-center gap-2 text-[9px]">
+                            <span>⏱️ {currentTopic.estimatedMinutes}min</span>
+                            <span>📝 {currentTopic.recommendedSessions} sessões</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              </div>
+
               <button 
                 onClick={handleStart}
                 className="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg transform hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
@@ -453,10 +556,158 @@ const App: React.FC = () => {
           onReviewClick={() => setShowLearningPath(true)}
         />
         
-        <LearningProgressSummary 
-          currentLevel={stats.level}
-          onViewDetails={() => setShowLearningPath(true)}
-        />
+        {/* Card de Progresso do Plano Estruturado */}
+        {conversationMode === 'structured' && (
+          <div className="bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200 rounded-3xl shadow-lg overflow-hidden">
+            <div className="p-6 pb-4">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Education size={24} className="text-slate-700" />
+                    <h3 className="font-bold text-gray-900">Plano Estruturado → C2</h3>
+                  </div>
+                  <p className="text-xs text-gray-600">Tópico {planProgress.currentTopicIndex + 1} de {allTopics.length}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-3xl font-bold text-slate-700">{structuredProgress}%</div>
+                    <div className="text-xs text-gray-500">Completo</div>
+                  </div>
+                  <button
+                    onClick={() => setIsStructuredPlanExpanded(!isStructuredPlanExpanded)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title={isStructuredPlanExpanded ? "Retrair" : "Expandir"}
+                  >
+                    {isStructuredPlanExpanded ? (
+                      <ChevronUp size={20} className="text-gray-500" />
+                    ) : (
+                      <ChevronDown size={20} className="text-gray-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div 
+              className={`transition-all duration-300 overflow-hidden ${
+                isStructuredPlanExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              <div className="px-6 pb-6 space-y-4">
+            
+            <div className="bg-white rounded-2xl p-4 border border-gray-100">
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Tópico Atual:</div>
+              <div className="text-sm font-semibold text-gray-900 mb-3">{currentTopic.title}</div>
+              <div className="text-xs text-gray-600 mb-3">{currentTopic.description}</div>
+              
+              {/* Estatísticas de Progresso do Tópico */}
+              <div className="space-y-3 pt-3 border-t border-gray-100">
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-gray-600 flex items-center gap-1">
+                      <Education size={12} className="text-gray-500" />
+                      Sessões
+                    </span>
+                    <span className="font-bold text-gray-900">
+                      {topicStats.sessionsCompleted} / {topicStats.sessionsRecommended} 
+                      {topicStats.isReady && <span className="text-green-600 ml-1">✓</span>}
+                    </span>
+                  </div>
+                  <div className="bg-gray-200 rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full transition-all duration-500 ${topicStats.isReady ? 'bg-green-500' : 'bg-slate-600'}`}
+                      style={{ width: `${topicStats.sessionsProgress}%` }}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-gray-600 flex items-center gap-1">
+                      <span className="text-gray-500">⏱</span>
+                      Tempo de Prática
+                    </span>
+                    <span className="font-bold text-gray-900">
+                      {topicStats.timeSpent} / {topicStats.timeEstimated} min
+                      {topicStats.isReady && <span className="text-green-600 ml-1">✓</span>}
+                    </span>
+                  </div>
+                  <div className="bg-gray-200 rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full transition-all duration-500 ${topicStats.isReady ? 'bg-green-500' : 'bg-amber-600'}`}
+                      style={{ width: `${topicStats.timeProgress}%` }}
+                    />
+                  </div>
+                </div>
+
+                {topicStats.isReady ? (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
+                    <span className="text-xs font-semibold text-green-700">✓ Pronto para teste!</span>
+                    <div className="text-[10px] text-green-600 mt-1">A IA vai avaliar seu progresso</div>
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-2">
+                    <div className="text-[10px] text-slate-700 space-y-0.5">
+                      <div>• Faltam {topicStats.remainingSessions} sessão(ões) recomendada(s)</div>
+                      <div>• Faltam ~{topicStats.remainingMinutes} min de prática</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-r from-slate-50 to-gray-50 border border-slate-200 rounded-xl p-3 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Education size={16} className="text-slate-600" />
+                <span className="text-xs font-bold text-gray-700">IA no Controle</span>
+              </div>
+              <div className="text-[10px] text-gray-600 space-y-1">
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-600">✓</span> A IA decide quando você está pronto
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-600">✓</span> Mini-teste aplicado automaticamente
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-600">✓</span> Avanço automático para próximo tópico
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={goToPreviousTopic}
+                disabled={planProgress.currentTopicIndex === 0}
+                className="flex-1 px-3 py-2 bg-white border border-gray-200 hover:border-gray-300 rounded-xl text-xs font-semibold text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1"
+              >
+                <ArrowLeft size={14} />
+                <span>Revisar Anterior</span>
+              </button>
+              <button
+                onClick={skipToNextTopic}
+                disabled={planProgress.currentTopicIndex >= allTopics.length - 1}
+                className="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1"
+              >
+                <span>Pular Tópico</span>
+              </button>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="text-xs text-gray-600 flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <Education size={12} className="text-gray-500" />
+                  Sessões totais: {planProgress.totalSessions}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="text-green-600">✓</span>
+                  Tópicos finalizados: {planProgress.topicsCompleted.length}
+                </span>
+              </div>
+            </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden flex flex-col p-6 items-center justify-center text-center space-y-4">
           {status === ConnectionStatus.ERROR && (
