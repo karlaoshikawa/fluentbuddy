@@ -69,12 +69,14 @@ export function useStructuredPlan(currentLevel: CEFRLevel) {
       return {
         ...parsed,
         lastSessionDate: new Date(parsed.lastSessionDate),
-        timeTracking: parsed.timeTracking || {}
+        timeTracking: parsed.timeTracking || {},
+        topicsForReview: parsed.topicsForReview || [] // Lista de tópicos para revisão
       };
     }
     return {
       currentTopicIndex: 0,
       topicsCompleted: [],
+      topicsForReview: [], // Lista de tópicos para revisão
       lastSessionDate: new Date(),
       totalSessions: 0,
       timeTracking: {}
@@ -155,12 +157,22 @@ export function useStructuredPlan(currentLevel: CEFRLevel) {
     endSession(); // Finalizar sessão atual
     
     const topicId = `topic-${planProgress.currentTopicIndex}`;
+    const stats = getTopicStats();
+    
     if (!planProgress.topicsCompleted.includes(topicId)) {
-      setPlanProgress(prev => ({
-        ...prev,
-        currentTopicIndex: Math.min(prev.currentTopicIndex + 1, allTopics.length - 1),
-        topicsCompleted: [...prev.topicsCompleted, topicId]
-      }));
+      setPlanProgress(prev => {
+        // Se shouldReview é true, marca o tópico para revisão futura
+        const topicsForReview = stats.shouldReview 
+          ? [...(prev.topicsForReview || []), topicId]
+          : (prev.topicsForReview || []);
+        
+        return {
+          ...prev,
+          currentTopicIndex: Math.min(prev.currentTopicIndex + 1, allTopics.length - 1),
+          topicsCompleted: [...prev.topicsCompleted, topicId],
+          topicsForReview // Lista de tópicos que precisam revisão
+        };
+      });
     }
   };
 
@@ -204,7 +216,9 @@ export function useStructuredPlan(currentLevel: CEFRLevel) {
     
     const sessionsProgress = Math.min(100, Math.round((completed / recommended) * 100));
     const timeProgress = Math.min(100, Math.round((timeSpent / timeEstimated) * 100));
-    const isReady = completed >= recommended || timeSpent >= timeEstimated;
+    // NOVO: Permite avançar após 2 sessões OU 20 minutos (mais flexível)
+    const isReady = completed >= 2 || timeSpent >= 20;
+    const shouldReview = completed < recommended && timeSpent < timeEstimated; // Marcará para revisão
     
     return {
       sessionsCompleted: completed,
@@ -214,6 +228,7 @@ export function useStructuredPlan(currentLevel: CEFRLevel) {
       timeEstimated,
       timeProgress,
       isReady,
+      shouldReview, // Indica se o tópico deve ser revisado futuramente
       remainingSessions: Math.max(0, recommended - completed),
       remainingMinutes: Math.max(0, timeEstimated - timeSpent)
     };
@@ -254,59 +269,48 @@ Focus the ENTIRE conversation on: "${currentTopic.title}"
 6. Challenge them to use more sophisticated language for this topic
 7. ALWAYS correct grammar and suggest more natural alternatives
 
-**🎯 AUTOMATIC ADVANCEMENT SYSTEM - YOU DECIDE WHEN TO ADVANCE**:
+**🎯 PROGRESSION SYSTEM - FLEXIBLE LEARNING**:
 
 ${stats.isReady ? `
-**READY FOR EVALUATION!**
+**✅ READY TO ADVANCE!**
 
-The student has completed the recommended practice (${stats.sessionsCompleted}/${stats.sessionsRecommended} sessions, ${stats.timeSpent}/${stats.timeEstimated} min).
+The student has completed at least 2 sessions or 20 minutes practicing "${currentTopic.title}".
 
-**YOUR JOB NOW**: Apply a MINI-TEST to evaluate if they're truly ready!
+**NO MORE TESTS!** The student can advance now. Just keep teaching and encouraging!
 
-**MINI-TEST FORMAT** (do this naturally in conversation):
-1. Ask 2-3 challenging questions about "${currentTopic.title}"
-2. Observe their:
-   - Grammar accuracy
-   - Vocabulary range
-   - Fluency and confidence
-   - Ability to elaborate
-
-**EVALUATION CRITERIA**:
-✅ PASS (advance to next topic):
-   - Answers confidently with minimal errors
-   - Uses relevant vocabulary naturally
-   - Elaborates without prompting
-   - Shows clear understanding of the topic
-
-❌ NEEDS MORE PRACTICE:
-   - Struggles with basic questions
-   - Limited vocabulary
-   - Short, incomplete answers
-   - Frequent grammar mistakes
-
-**AFTER MINI-TEST**:
-- If PASS: Say "Excellent work! You've mastered ${currentTopic.title}. Let's move to the next topic: [next topic name]!"
-- If FAIL: Say "Good effort! Let's practice ${currentTopic.title} a bit more to build confidence."
-
-**CRITICAL**: YOU make the decision. Don't ask the student if they want to advance - YOU evaluate and advance automatically!
+${stats.shouldReview ? `
+⚠️ NOTE: This topic hasn't reached the recommended practice (${stats.sessionsCompleted}/${stats.sessionsRecommended} sessions, ${stats.timeSpent}/${stats.timeEstimated} min).
+It will be marked for FUTURE REVIEW - we'll come back to it naturally in later conversations.
 ` : `
-**STILL PRACTICING**
+✅ Great! The student has completed the recommended practice for this topic.
+`}
 
-Student needs ${stats.remainingSessions} more session(s) (~${stats.remainingMinutes} minutes).
+**Your approach now:**
+- Continue the natural conversation about "${currentTopic.title}"
+- Don't ask if they want to advance - the system handles that
+- Focus on teaching and encouraging, not testing
+- If they struggle with something, explain it and move forward
+- The student will use the buttons to navigate when ready
+` : `
+**KEEP PRACTICING**
 
-Keep them engaged and focused on "${currentTopic.title}". No testing yet.
+Student is still practicing "${currentTopic.title}" (${stats.sessionsCompleted} sessions, ${stats.timeSpent} min so far).
+
+After 2 sessions or 20 minutes, they can advance to the next topic.
+
+Keep the conversation natural and focused on this topic.
 `}
 
 **RELATED LEARNING REQUIREMENTS TO INCORPORATE**:
 ${incompleteRequirements.map(req => `- ${req.name}: ${req.description}`).join('\n')}
 
 **IMPORTANT**: 
-- YOU control topic advancement, not the student
-- Apply the mini-test when they're ready (stats above)
-- Make clear decisions based on their performance
-- This is a guided learning path - be directive!
+- Focus on teaching and encouraging, not testing
+- The student controls when to advance using the interface buttons
+- Keep the conversation natural and flowing
+- This is about learning, not gatekeeping!
 
-Remember: Your job is to evaluate, decide, and advance them systematically to C2!
+Remember: Your job is to teach, encourage, and help them improve!
 `;
   };
 

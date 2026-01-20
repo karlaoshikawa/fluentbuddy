@@ -7,38 +7,15 @@ import {
   serverTimestamp,
   Timestamp 
 } from 'firebase/firestore';
-import { getFirebaseInstances, ensureAuthenticated, getUserId } from '../firebase.config';
+import { getFirebaseInstances, getUserId } from '../firebase.config';
 import { UserProgress } from '../types';
+import { useFirebaseContext } from '../contexts/FirebaseContext';
 
 export function useFirebaseSync() {
-  const [isInitialized, setIsInitialized] = useState(false);
+  const { isInitialized } = useFirebaseContext();
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
-
-  // Inicializar Firebase e autenticar
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const result = await ensureAuthenticated();
-        
-        // Se Firebase não está configurado ou falhou
-        if (!result) {
-          setIsInitialized(false);
-          setSyncError('Firebase não configurado - usando apenas localStorage');
-          return;
-        }
-
-        setIsInitialized(true);
-      } catch (error) {
-        console.warn('⚠️ Não foi possível conectar ao Firebase. Usando modo local.', error);
-        setIsInitialized(false);
-        setSyncError('Sem conexão cloud - salvando localmente');
-      }
-    };
-    
-    init();
-  }, []);
 
   // Salvar progresso no Firebase
   const saveProgress = useCallback(async (progress: UserProgress) => {

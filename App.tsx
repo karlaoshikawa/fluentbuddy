@@ -40,6 +40,15 @@ const App: React.FC = () => {
     const auth = localStorage.getItem('fluentbuddy_auth');
     if (auth === 'true') {
       setIsAuthenticated(true);
+      // Garantir que URL está correta
+      if (window.location.pathname === '/login') {
+        window.history.replaceState({}, '', '/');
+      }
+    } else {
+      // Se não autenticado, garantir que URL mostra /login
+      if (window.location.pathname !== '/login') {
+        window.history.replaceState({}, '', '/login');
+      }
     }
     
     // Verificar se já fez o teste de nível
@@ -642,14 +651,17 @@ const App: React.FC = () => {
 
                 {topicStats.isReady ? (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
-                    <span className="text-xs font-semibold text-green-700">✓ Pronto para teste!</span>
-                    <div className="text-[10px] text-green-600 mt-1">A IA vai avaliar seu progresso</div>
+                    <span className="text-xs font-semibold text-green-700">✓ Pode avançar!</span>
+                    <div className="text-[10px] text-green-600 mt-1">Clique em "Completar" quando quiser</div>
+                    {(topicStats as any).shouldReview && (
+                      <div className="text-[10px] text-amber-600 mt-1">⚠️ Será revisado futuramente</div>
+                    )}
                   </div>
                 ) : (
                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-2">
                     <div className="text-[10px] text-slate-700 space-y-0.5">
-                      <div>• Faltam {topicStats.remainingSessions} sessão(ões) recomendada(s)</div>
-                      <div>• Faltam ~{topicStats.remainingMinutes} min de prática</div>
+                      <div>• Mínimo 2 sessões ou 20 min para avançar</div>
+                      <div>• Recomendado: {topicStats.sessionsRecommended} sessões / {topicStats.timeEstimated} min</div>
                     </div>
                   </div>
                 )}
@@ -659,20 +671,45 @@ const App: React.FC = () => {
             <div className="bg-gradient-to-r from-slate-50 to-gray-50 border border-slate-200 rounded-xl p-3 mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <Education size={16} className="text-slate-600" />
-                <span className="text-xs font-bold text-gray-700">IA no Controle</span>
+                <span className="text-xs font-bold text-gray-700">Sistema Flexível</span>
               </div>
               <div className="text-[10px] text-gray-600 space-y-1">
                 <div className="flex items-center gap-1">
-                  <span className="text-slate-600">✓</span> A IA decide quando você está pronto
+                  <span className="text-slate-600">✓</span> Avance após 2 sessões ou 20 min
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-slate-600">✓</span> Mini-teste aplicado automaticamente
+                  <span className="text-slate-600">✓</span> Você controla o ritmo
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-slate-600">✓</span> Avanço automático para próximo tópico
+                  <span className="text-slate-600">✓</span> Tópicos marcados para revisão futura
                 </div>
               </div>
             </div>
+            
+            {/* Lista de tópicos para revisar */}
+            {planProgress.topicsForReview && planProgress.topicsForReview.length > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-amber-700">⚠️</span>
+                  <span className="text-xs font-bold text-amber-900">Tópicos para Revisar</span>
+                </div>
+                <div className="text-[10px] text-amber-800 space-y-1">
+                  {planProgress.topicsForReview.slice(-3).map((topicId: string) => {
+                    const idx = parseInt(topicId.split('-')[1]);
+                    const topic = allTopics[idx];
+                    return (
+                      <div key={topicId} className="flex items-center gap-1">
+                        <span>•</span>
+                        <span>{topic?.title || 'Tópico'}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="text-[9px] text-amber-700 mt-2 italic">
+                  Estes tópicos serão reforçados em conversas futuras
+                </div>
+              </div>
+            )}
             
             <div className="flex gap-2">
               <button
@@ -681,14 +718,21 @@ const App: React.FC = () => {
                 className="flex-1 px-3 py-2 bg-white border border-gray-200 hover:border-gray-300 rounded-xl text-xs font-semibold text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1"
               >
                 <ArrowLeft size={14} />
-                <span>Revisar Anterior</span>
+                <span>Anterior</span>
+              </button>
+              <button
+                onClick={completeCurrentTopic}
+                disabled={!topicStats.isReady}
+                className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 rounded-xl text-xs font-semibold text-white disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1"
+              >
+                <span>✓ Completar</span>
               </button>
               <button
                 onClick={skipToNextTopic}
                 disabled={planProgress.currentTopicIndex >= allTopics.length - 1}
                 className="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1"
               >
-                <span>Pular Tópico</span>
+                <span>Pular →</span>
               </button>
             </div>
             

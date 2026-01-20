@@ -25,6 +25,7 @@ const isFirebaseConfigured = () => {
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
 let auth: Auth | null = null;
+let authenticationPromise: Promise<any> | null = null; // Cache da promise de autenticação
 
 // Inicializar Firebase apenas uma vez
 export function initializeFirebase() {
@@ -64,16 +65,29 @@ export async function ensureAuthenticated() {
     return null;
   }
   
-  if (!auth.currentUser) {
-    try {
-      await signInAnonymously(auth);
-    } catch (error) {
-      console.error('❌ Erro ao autenticar:', error);
-      throw error;
-    }
+  // Se já está autenticado, retorna imediatamente
+  if (auth.currentUser) {
+    return auth.currentUser;
   }
-  
-  return auth.currentUser;
+
+  // Se já há uma autenticação em andamento, aguarda ela
+  if (authenticationPromise) {
+    return authenticationPromise;
+  }
+
+  // Inicia nova autenticação e armazena a promise
+  authenticationPromise = signInAnonymously(auth)
+    .then(() => {
+      authenticationPromise = null; // Limpa após sucesso
+      return auth.currentUser;
+    })
+    .catch((error) => {
+      console.error('❌ Erro ao autenticar:', error);
+      authenticationPromise = null; // Limpa após erro
+      return null;
+    });
+
+  return authenticationPromise;
 }
 
 // Obter ID do usuário

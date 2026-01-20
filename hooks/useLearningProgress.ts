@@ -51,33 +51,41 @@ export function useLearningProgress(currentLevel: CEFRLevel) {
   // Carregar progresso do Firebase ao inicializar
   useEffect(() => {
     const loadInitialProgress = async () => {
-      if (!isInitialized) return;
+      if (!isInitialized) {
+        setIsLoading(false);
+        return;
+      }
 
-      const cloudProgress = await loadFromFirebase();
-      
-      if (cloudProgress) {
-        // Comparar datas e usar o mais recente
-        const localProgress = localStorage.getItem('learning_progress');
+      try {
+        const cloudProgress = await loadFromFirebase();
         
-        if (localProgress) {
-          const local = JSON.parse(localProgress);
-          const localDate = new Date(local.lastUpdated);
-          const cloudDate = new Date(cloudProgress.lastUpdated);
+        if (cloudProgress) {
+          // Comparar datas e usar o mais recente
+          const localProgress = localStorage.getItem('learning_progress');
           
-          if (cloudDate > localDate) {
+          if (localProgress) {
+            const local = JSON.parse(localProgress);
+            const localDate = new Date(local.lastUpdated);
+            const cloudDate = new Date(cloudProgress.lastUpdated);
+            
+            if (cloudDate > localDate) {
+              setProgress(cloudProgress);
+              localStorage.setItem('learning_progress', JSON.stringify(cloudProgress));
+            } else {
+              // Sincronizar progresso local para a nuvem
+              await saveToFirebase(local);
+            }
+          } else {
             setProgress(cloudProgress);
             localStorage.setItem('learning_progress', JSON.stringify(cloudProgress));
-          } else {
-            // Sincronizar progresso local para a nuvem
-            await saveToFirebase(local);
           }
-        } else {
-          setProgress(cloudProgress);
-          localStorage.setItem('learning_progress', JSON.stringify(cloudProgress));
         }
+      } catch (error) {
+        console.error('❌ Erro ao carregar progresso inicial:', error);
+        // Continuar com progresso local em caso de erro
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
 
     loadInitialProgress();
@@ -87,23 +95,31 @@ export function useLearningProgress(currentLevel: CEFRLevel) {
   useEffect(() => {
     if (!isInitialized) return;
 
-    const unsubscribe = subscribeToProgress((cloudProgress) => {
-      // Só atualizar se o progresso da nuvem for mais recente
-      const currentDate = new Date(progress.lastUpdated);
-      const cloudDate = new Date(cloudProgress.lastUpdated);
-      
-      if (cloudDate > currentDate) {
-        isSyncingFromCloud.current = true;
-        setProgress(cloudProgress);
-        localStorage.setItem('learning_progress', JSON.stringify(cloudProgress));
-        // Aguardar um pouco antes de permitir novos salvamentos
-        setTimeout(() => { 
-          isSyncingFromCloud.current = false; 
-        }, 500);
-      }
-    });
+    try {
+      const unsubscribe = subscribeToProgress((cloudProgress) => {
+        // Só atualizar se o progresso da nuvem for mais recente
+        const currentDate = new Date(progress.lastUpdated);
+        const cloudDate = new Date(cloudProgress.lastUpdated);
+        
+        if (cloudDate > currentDate) {
+          isSyncingFromCloud.current = true;
+          setProgress(cloudProgress);
+          localStorage.setItem('learning_progress', JSON.stringify(cloudProgress));
+          // Aguardar um pouco antes de permitir novos salvamentos
+          setTimeout(() => { 
+            isSyncingFromCloud.current = false; 
+          }, 500);
+        }
+      });
 
-    return unsubscribe;
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    } catch (error) {
+      console.error('❌ Erro ao configurar sincronização em tempo real:', error);
+      // Continuar funcionando sem sync em tempo real
+      return undefined;
+    }
   }, [isInitialized, subscribeToProgress, progress.lastUpdated]);
 
   // Salvar no localStorage e Firebase com debounce

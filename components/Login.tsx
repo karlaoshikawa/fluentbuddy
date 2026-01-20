@@ -18,6 +18,7 @@ export function Login({ onLogin }: LoginProps) {
 
     if (username === validUsername && password === validPassword) {
       localStorage.setItem('fluentbuddy_auth', 'true');
+      window.history.replaceState({}, '', '/');
       onLogin();
     } else {
       setError('Usuário ou senha incorretos');

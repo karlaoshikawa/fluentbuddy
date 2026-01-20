@@ -142,6 +142,7 @@ export interface TopicTimeTracking {
 export interface StructuredPlanProgress {
   currentTopicIndex: number; // índice do tópico atual no plano
   topicsCompleted: string[]; // IDs dos tópicos já completados
+  topicsForReview?: string[]; // IDs dos tópicos que precisam revisão futura
   currentSessionGoal?: string; // Objetivo da sessão atual
   lastSessionDate: Date;
   totalSessions: number;
