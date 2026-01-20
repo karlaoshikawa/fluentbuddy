@@ -132,11 +132,12 @@ export function LevelTest({ onComplete }: LevelTestProps) {
   const progress = ((currentQuestion + 1) / questions.length) * 100;
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-slate-50 to-gray-100 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-8 space-y-6">
+    <div className="fixed inset-0 bg-gradient-to-br from-slate-50 to-gray-100 z-50 overflow-y-auto">
+      <div className="min-h-screen flex items-center justify-center p-4 py-8">
+        <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 md:p-8 space-y-6 my-auto">
         {/* Header */}
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-2">
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
             Quick Level Assessment
           </h2>
           <p className="text-slate-600 text-sm">
@@ -159,26 +160,26 @@ export function LevelTest({ onComplete }: LevelTestProps) {
         </div>
 
         {/* Question */}
-        <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
-          <h3 className="text-lg font-semibold text-slate-900">
+        <div className="bg-slate-50 rounded-2xl p-4 md:p-6 space-y-4">
+          <h3 className="text-base md:text-lg font-semibold text-slate-900">
             {question.question}
           </h3>
 
-          <div className="space-y-3">
+          <div className="space-y-2 md:space-y-3">
             {question.options.map((option, index) => (
               <button
                 key={index}
                 onClick={() => setSelectedOption(index)}
-                className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${
+                className={`w-full text-left p-3 md:p-4 rounded-xl border-2 transition-all duration-200 ${
                   selectedOption === index
                     ? 'border-slate-700 bg-slate-100 shadow-md'
                     : 'border-slate-200 hover:border-slate-400 bg-white'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-800 font-medium">{option}</span>
+                  <span className="text-sm md:text-base text-slate-800 font-medium">{option}</span>
                   {selectedOption === index && (
-                    <CheckmarkFilled size={20} className="text-slate-700" />
+                    <CheckmarkFilled size={20} className="text-slate-700 flex-shrink-0" />
                   )}
                 </div>
               </button>
@@ -200,6 +201,7 @@ export function LevelTest({ onComplete }: LevelTestProps) {
         <p className="text-xs text-slate-500 text-center">
           This test appears only once. Your progress will be saved locally.
         </p>
+      </div>
       </div>
     </div>
   );
