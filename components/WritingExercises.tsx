@@ -9,7 +9,7 @@ interface WritingExercisesProps {
 
 export const WritingExercises: React.FC<WritingExercisesProps> = ({ userLevel }) => {
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
-  const [linesForNotebook, setLinesForNotebook] = useState(5);
+  const [textLength, setTextLength] = useState<'very-short' | 'short' | 'medium' | 'long' | 'very-long'>('short');
   const [showText, setShowText] = useState(false);
   const [summary, setSummary] = useState('');
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -20,7 +20,29 @@ export const WritingExercises: React.FC<WritingExercisesProps> = ({ userLevel })
   });
   const [generatedText, setGeneratedText] = useState<WritingText | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [hasApiKey, setHasApiKey] = useState(!!import.meta.env.VITE_OPENAI_API_KEY);
+  const [hasApiKey, setHasApiKey] = useState(!!import.meta.env.VITE_GEMINI_API_KEY);
+
+  // Resetar texto gerado quando o tamanho muda (para forçar nova geração)
+  useEffect(() => {
+    if (generatedText && showText) {
+      setGeneratedText(null);
+      setShowText(false);
+      setSummary('');
+      setEvaluation(null);
+    }
+  }, [textLength]);
+
+  // Mapear tamanho para número de palavras
+  const getWordCount = () => {
+    const wordMap = {
+      'very-short': 50,
+      'short': 100,
+      'medium': 150,
+      'long': 200,
+      'very-long': 250
+    };
+    return wordMap[textLength];
+  };
 
   // Filtrar textos por nível
   const availableTexts = WRITING_TEXTS.filter(text => {
@@ -33,16 +55,15 @@ export const WritingExercises: React.FC<WritingExercisesProps> = ({ userLevel })
 
   const currentText = generatedText || availableTexts[currentTextIndex] || WRITING_TEXTS[0];
 
-  // Gerar novo texto com IA baseado no número de linhas
+  // Gerar novo texto com IA baseado no número de palavras
   const generateNewText = async () => {
     setIsGenerating(true);
     
     try {
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       
       // Se não houver API key, usar texto pré-definido
       if (!apiKey) {
-        console.warn('API key não configurada, usando textos pré-definidos');
         const randomText = availableTexts[Math.floor(Math.random() * availableTexts.length)];
         setGeneratedText(randomText);
         setShowText(true);
@@ -52,59 +73,70 @@ export const WritingExercises: React.FC<WritingExercisesProps> = ({ userLevel })
         return;
       }
       
-      // Estimar palavras baseado em linhas (aproximadamente 12-15 palavras por linha)
-      const estimatedWords = linesForNotebook * 13;
+      // Capturar o tamanho atual no momento da geração
+      const targetWords = getWordCount();
       
-      const prompt = `You are an English teacher creating a reading exercise for a student.
+      const prompt = `CRITICAL MISSION: Write a story with EXACTLY ${targetWords} words. Not ${targetWords - 10}, not ${targetWords + 10}, but EXACTLY ${targetWords} words (±5 max).
 
-Student Level: ${userLevel} (CEFR)
-Text Length: approximately ${estimatedWords} words (to fit in ${linesForNotebook} lines when displayed)
-Difficulty: Progressive (this is exercise #${progressData.completed + 1})
+COUNT EXAMPLE (for reference):
+"I went to school today" = 5 words
+"The cat sat on the mat" = 6 words  
+"She quickly ran down the street" = 6 words
 
-Create a NEW, interesting short story or text that:
-1. Is appropriate for ${userLevel} level
-2. Has approximately ${estimatedWords} words
-3. Teaches 3-5 new vocabulary words for this level
-4. Includes 1-2 grammar points relevant to ${userLevel}
-5. Is engaging and interesting (mini-story, real-life situation, or interesting fact)
-6. Gets slightly harder than previous exercises (current progress: ${progressData.completed} completed)
+YOUR TASK:
+Write a ${userLevel}-level English story with EXACTLY ${targetWords} WORDS.
 
-Make it a COMPLETE story with beginning, middle, and end.
+STRICT REQUIREMENTS:
+✓ Exactly ${targetWords} words (minimum: ${targetWords - 5}, maximum: ${targetWords + 5})
+✓ Complete story: beginning, middle, ending
+✓ Appropriate for ${userLevel} CEFR level
+✓ Include 3-5 vocabulary words for ${userLevel}
+✓ Focus on 1 grammar point
 
-Return ONLY a JSON object:
+METHODOLOGY TO ENSURE ${targetWords} WORDS:
+Step 1: Write first paragraph, count words (aim for ${Math.floor(targetWords * 0.3)} words)
+Step 2: Write middle section, count again (aim for ${Math.floor(targetWords * 0.5)} words total)
+Step 3: Write ending, count final total (must be ${targetWords} words ±5)
+Step 4: If count is wrong, ADD or REMOVE words until ${targetWords} is reached
+
+EXAMPLE LENGTHS:
+- 50 words = about 3-4 sentences
+- 100 words = about 6-7 sentences  
+- 150 words = about 9-11 sentences
+- 200 words = about 12-14 sentences
+- 250 words = about 15-17 sentences
+
+For ${targetWords} words, write approximately ${Math.ceil(targetWords / 15)} sentences.
+
+Return ONLY this JSON (no extra text):
 {
-  "id": "generated-${Date.now()}",
+  "id": "gen-${Date.now()}",
   "level": "${userLevel}",
   "difficulty": ${Math.min(10, 3 + progressData.completed)},
-  "title": "Catchy short title",
-  "text": "The complete story text here (${estimatedWords} words)",
-  "wordCount": actual_word_count,
+  "title": "Engaging Title",
+  "text": "[YOUR STORY HERE - MUST BE ${targetWords} WORDS]",
+  "wordCount": ${targetWords},
   "topics": ["topic1", "topic2"],
   "keyVocabulary": ["word1", "word2", "word3", "word4", "word5"],
-  "comprehensionQuestions": ["question1", "question2", "question3"],
-  "grammarFocus": "Main grammar point taught (e.g., 'past perfect', 'conditionals')"
+  "comprehensionQuestions": ["Q1?", "Q2?", "Q3?"],
+  "grammarFocus": "Grammar point"
 }`;
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert English teacher who creates engaging, level-appropriate texts. Always respond with valid JSON only.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.8, // Mais criativo
-          response_format: { type: 'json_object' }
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.5,
+            maxOutputTokens: 4096
+          }
         })
       });
 
@@ -113,7 +145,87 @@ Return ONLY a JSON object:
       }
 
       const data = await response.json();
-      const newText: WritingText = JSON.parse(data.choices[0].message.content);
+      
+      // Verificar se há erro na resposta
+      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+        throw new Error('Resposta inválida da API');
+      }
+      
+      const rawContent = data.candidates[0].content.parts[0].text;
+      // Limpar markdown code fences se existirem
+      const textContent = rawContent.replace(/^```json\n?/i, '').replace(/```\s*$/i, '').trim();
+      
+      const newText: WritingText = JSON.parse(textContent);
+      
+      // Validar palavra contagem real
+      const actualWordCount = newText.text.trim().split(/\s+/).length;
+      const absDifference = Math.abs(actualWordCount - targetWords);
+      
+      // Se a diferença for muito grande (>30 palavras), tentar ajustar
+      if (absDifference > 30) {
+        
+        const adjustPrompt = `You generated a ${actualWordCount}-word story, but I need EXACTLY ${targetWords} words.
+
+CURRENT TEXT (${actualWordCount} words):
+"${newText.text}"
+
+TASK: ${difference > 0 ? `REMOVE ${absDifference} words` : `ADD ${absDifference} words`} to make it EXACTLY ${targetWords} words.
+
+${difference > 0 ? 
+  'Remove unnecessary adjectives, details, or sentences. Keep the story coherent.' : 
+  'Add more details, descriptions, or extend sentences. Maintain the story flow.'}
+
+Return the ADJUSTED story as JSON:
+{
+  "id": "gen-${Date.now()}",
+  "level": "${userLevel}",
+  "difficulty": ${Math.min(10, 3 + progressData.completed)},
+  "title": "${newText.title}",
+  "text": "[ADJUSTED TEXT WITH ${targetWords} WORDS]",
+  "wordCount": ${targetWords},
+  "topics": ${JSON.stringify(newText.topics)},
+  "keyVocabulary": ${JSON.stringify(newText.keyVocabulary)},
+  "comprehensionQuestions": ${JSON.stringify(newText.comprehensionQuestions)},
+  "grammarFocus": "${newText.grammarFocus}"
+}`;
+
+        const retryResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: adjustPrompt }] }],
+            generationConfig: {
+              temperature: 0.3,
+              maxOutputTokens: 4096
+            }
+          })
+        });
+
+        if (retryResponse.ok) {
+          const retryData = await retryResponse.json();
+          if (retryData.candidates && retryData.candidates[0]) {
+            const rawAdjusted = retryData.candidates[0].content.parts[0].text;
+            const adjustedTextContent = rawAdjusted.replace(/^```json\n?/i, '').replace(/```\s*$/i, '').trim();
+            const adjustedText: WritingText = JSON.parse(adjustedTextContent);
+            const adjustedWordCount = adjustedText.text.trim().split(/\s+/).length;
+            
+            // Usar o texto ajustado
+            adjustedText.wordCount = adjustedWordCount;
+            setGeneratedText(adjustedText);
+            setShowText(true);
+            setEvaluation(null);
+            setSummary('');
+            setIsGenerating(false);
+            return;
+          }
+        }
+      }
+      
+      // Atualizar wordCount com valor real
+      newText.wordCount = actualWordCount;
+      
+      // Atualizar wordCount com valor real
+      newText.wordCount = actualWordCount;
       
       setGeneratedText(newText);
       setShowText(true);
@@ -121,7 +233,6 @@ Return ONLY a JSON object:
       setSummary('');
 
     } catch (error) {
-      console.error('Erro ao gerar texto:', error);
       // Fallback: usar texto pré-definido
       const randomText = availableTexts[Math.floor(Math.random() * availableTexts.length)];
       setGeneratedText(randomText);
@@ -141,7 +252,7 @@ Return ONLY a JSON object:
         const data = JSON.parse(saved);
         setProgressData(data);
       } catch (e) {
-        console.error('Erro ao carregar progresso:', e);
+        // Progresso corrompido, ignorar
       }
     }
   }, []);
@@ -178,11 +289,10 @@ Return ONLY a JSON object:
     setIsEvaluating(true);
 
     try {
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       
       // Se não houver API key, fornecer feedback básico
       if (!apiKey) {
-        console.warn('API key não configurada, fornecendo avaliação básica');
         const wordCount = summary.trim().split(/\s+/).length;
         const basicScore = Math.min(100, Math.max(50, wordCount * 5));
         
@@ -190,7 +300,7 @@ Return ONLY a JSON object:
           score: basicScore,
           feedback: 'Bom trabalho! Continue praticando sua escrita em inglês.',
           strengths: ['Você escreveu um resumo', 'Praticou vocabulário em inglês'],
-          improvements: ['Configure a API key da OpenAI para feedback detalhado'],
+          improvements: ['Configure a API key do Gemini para feedback detalhado'],
           keyPointsCovered: [],
           missedPoints: []
         });
@@ -216,7 +326,7 @@ Evaluate the summary based on:
 
 Provide a score from 0-100 and detailed feedback.
 
-Return ONLY a JSON object with this structure:
+Return ONLY a valid JSON object (no markdown, no extra text):
 {
   "score": number (0-100),
   "feedback": "Overall feedback in Portuguese",
@@ -227,26 +337,20 @@ Return ONLY a JSON object with this structure:
   "missedPoints": ["missed point 1", "missed point 2"]
 }`;
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert English teacher. Always respond with valid JSON only.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.7,
-          response_format: { type: 'json_object' }
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7
+          }
         })
       });
 
@@ -255,7 +359,9 @@ Return ONLY a JSON object with this structure:
       }
 
       const data = await response.json();
-      const evalResult: WritingSummaryEvaluation = JSON.parse(data.choices[0].message.content);
+      const rawEval = data.candidates[0].content.parts[0].text;
+      const cleanEval = rawEval.replace(/^```json\n?/i, '').replace(/```\s*$/i, '').trim();
+      const evalResult: WritingSummaryEvaluation = JSON.parse(cleanEval);
       
       setEvaluation(evalResult);
 
@@ -270,16 +376,15 @@ Return ONLY a JSON object with this structure:
       }
 
     } catch (error) {
-      console.error('Erro ao avaliar:', error);
       // Fallback: fornecer feedback básico
       const wordCount = summary.trim().split(/\s+/).length;
       const basicScore = Math.min(100, Math.max(50, wordCount * 5));
       
       setEvaluation({
         score: basicScore,
-        feedback: 'Bom trabalho! Continue praticando. (Configure a API key da OpenAI para feedback mais detalhado)',
+        feedback: 'Bom trabalho! Continue praticando. (Configure a API key do Gemini para feedback mais detalhado)',
         strengths: ['Você completou o exercício', 'Praticou escrita em inglês'],
-        improvements: ['Configure VITE_OPENAI_API_KEY no arquivo .env para avaliação completa'],
+        improvements: ['Configure VITE_GEMINI_API_KEY no arquivo .env.local para avaliação completa'],
         keyPointsCovered: [],
         missedPoints: []
       });
@@ -367,21 +472,27 @@ Return ONLY a JSON object with this structure:
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
             <DocumentBlank size={24} className="text-blue-600" />
-            Passo 1: Escolha o tamanho do seu texto
+            Passo 1: Escolha o tamanho do texto
           </h3>
           <p className="text-gray-600 mb-4">
-            Quantas linhas de texto você quer na tela? A IA vai gerar uma história nova para você!
+            Selecione o tamanho do texto que você quer ler e copiar:
           </p>
-          <div className="flex items-center gap-4 mb-6">
-            <input
-              type="number"
-              min="3"
-              max="15"
-              value={linesForNotebook}
-              onChange={(e) => setLinesForNotebook(Math.max(3, Math.min(15, parseInt(e.target.value) || 5)))}
-              className="w-24 px-4 py-2 border-2 border-gray-300 rounded-lg text-center text-lg font-semibold"
-            />
-            <span className="text-gray-600">linhas de texto</span>
+          
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Tamanho do texto:
+            </label>
+            <select
+              value={textLength}
+              onChange={(e) => setTextLength(e.target.value as any)}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-base font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+            >
+              <option value="very-short">Muito Curto (~50 palavras - 3-4 linhas)</option>
+              <option value="short">Curto (~100 palavras - 5-6 linhas)</option>
+              <option value="medium">Médio (~150 palavras - 7-8 linhas)</option>
+              <option value="long">Longo (~200 palavras - 10-12 linhas)</option>
+              <option value="very-long">Muito Longo (~250 palavras - 14-16 linhas)</option>
+            </select>
           </div>
 
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-4 mb-6">
@@ -395,7 +506,7 @@ Return ONLY a JSON object with this structure:
                   {hasApiKey ? (
                     <>
                       <li>✓ Adaptado ao seu nível ({userLevel})</li>
-                      <li>✓ Com ~{linesForNotebook * 13} palavras</li>
+                      <li>✓ Exatamente {getWordCount()} palavras</li>
                       <li>✓ Ensina vocabulário novo</li>
                       <li>✓ Foca em gramática específica</li>
                       <li>✓ História interessante e completa</li>
@@ -405,7 +516,6 @@ Return ONLY a JSON object with this structure:
                     <>
                       <li>✓ Textos pré-selecionados para seu nível</li>
                       <li>✓ Vocabulário e gramática incluídos</li>
-                      <li>⚠️ Configure VITE_OPENAI_API_KEY para textos gerados por IA</li>
                     </>
                   )}
                 </ul>
@@ -437,11 +547,32 @@ Return ONLY a JSON object with this structure:
       {showText && !evaluation && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Passo 2: Copie este texto à mão no seu caderno
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-bold text-gray-900">
+                Passo 2: Copie este texto à mão no seu caderno
+              </h3>
+              {currentText.wordCount && (
+                <div className="flex items-center gap-2">
+                  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-bold">
+                    {currentText.wordCount} palavras
+                  </span>
+                  {(() => {
+                    const expected = getWordCount();
+                    const diff = Math.abs(currentText.wordCount - expected);
+                    if (diff > 20) {
+                      return (
+                        <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold">
+                          ⚠️ Esperava {expected}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              )}
+            </div>
             <p className="text-sm text-gray-600 mb-4">
-              📝 Copiar à mão ajuda na memorização! Este texto tem aproximadamente <strong>{linesForNotebook} linhas</strong>.
+              📝 Copiar à mão ajuda na memorização!
             </p>
             
             {currentText.grammarFocus && (
