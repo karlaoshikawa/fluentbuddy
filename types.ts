@@ -149,3 +149,28 @@ export interface StructuredPlanProgress {
   timeTracking: Record<number, TopicTimeTracking>; // tracking por tópico
   currentSessionStartTime?: number; // timestamp do início da sessão atual
 }
+
+// ===== Sistema de Exercícios de Escrita =====
+
+export interface WritingText {
+  id: string;
+  level: CEFRLevel;
+  difficulty: number; // 1-10 para ordenação progressiva
+  title: string;
+  text: string;
+  wordCount: number;
+  topics: string[]; // temas/tópicos do texto
+  comprehensionQuestions?: string[]; // perguntas para verificar compreensão
+  keyVocabulary?: string[]; // palavras-chave do texto
+  grammarFocus?: string; // ponto gramatical sendo ensinado
+}
+
+export interface WritingSummaryEvaluation {
+  score: number; // 0-100
+  feedback: string;
+  strengths: string[];
+  improvements: string[];
+  correctedVersion?: string;
+  keyPointsCovered: string[];
+  missedPoints: string[];
+}

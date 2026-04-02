@@ -17,6 +17,7 @@ import { ReviewReminder } from './components/ReviewReminder';
 import { Login } from './components/Login';
 import { LevelTest } from './components/LevelTest';
 import { VocabularyExercises } from './components/VocabularyExercises';
+import { WritingExercises } from './components/WritingExercises';
 import { RequirementNotification, setNotificationCallback } from './components/RequirementNotification';
 import { AUDIO_CONFIG } from './constants';
 import { ArrowLeft, Send, Microphone, MicrophoneOff, Stop, Book, Logout, Play, Edit, Education, ChevronUp, ChevronDown } from '@carbon/icons-react';
@@ -27,6 +28,7 @@ const App: React.FC = () => {
   const [hasStarted, setHasStarted] = useState(false);
   const [showLearningPath, setShowLearningPath] = useState(false);
   const [showExercises, setShowExercises] = useState(false);
+  const [showWritingExercises, setShowWritingExercises] = useState(false);
   const [studyMode, setStudyMode] = useState<'voice' | 'text'>('voice');
   const [conversationMode, setConversationMode] = useState<'free' | 'structured'>('free');
   const [textInput, setTextInput] = useState('');
@@ -153,6 +155,8 @@ const App: React.FC = () => {
     }
     if (showExercises) {
       setShowExercises(false);
+    } else if (showWritingExercises) {
+      setShowWritingExercises(false);
     } else if (showLearningPath) {
       setShowLearningPath(false);
     } else {
@@ -457,8 +461,104 @@ const App: React.FC = () => {
                 <span>Começar Exercícios</span>
               </button>
             </div>
+
+            {/* Card de Exercícios de Escrita */}
+            <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Edit size={24} className="text-blue-700" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">Exercícios de Escrita</h3>
+                  <p className="text-sm text-gray-600">Leitura, cópia e resumo de textos</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-900">Como Funciona</span>
+                  </div>
+                  <ul className="space-y-1.5 text-xs text-gray-600">
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                      Escolha quantas linhas reservar no caderno
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                      Leia e copie o texto em inglês
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                      Escreva um resumo do que entendeu
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                      Receba feedback e % de acerto
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                      Dificuldade aumenta progressivamente
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="bg-green-50 rounded-xl p-4 border border-green-100">
+                  <p className="text-xs text-green-900">
+                    <strong>✨ Benefício:</strong> Melhora compreensão, vocabulário e escrita simultaneamente!
+                  </p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => {
+                  setHasStarted(true);
+                  setShowWritingExercises(true);
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transform hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <Edit size={20} />
+                <span>Praticar Escrita</span>
+              </button>
+            </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Renderizar WritingExercises se estiver ativo
+  if (showWritingExercises) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={() => {
+                setShowWritingExercises(false);
+                setHasStarted(false);
+              }}
+              className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
+            >
+              <ArrowLeft size={24} />
+            </button>
+            <div>
+              <h2 className="font-bold text-gray-900">Exercícios de Escrita</h2>
+              <p className="text-xs text-gray-500">Nível {stats.level}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem('fluentbuddy_auth');
+              setIsAuthenticated(false);
+            }}
+            className="text-sm text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1.5"
+          >
+            <Logout size={18} />
+            <span>Sair</span>
+          </button>
+        </header>
+        <WritingExercises userLevel={stats.level} />
       </div>
     );
   }
