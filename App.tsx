@@ -18,6 +18,7 @@ import { Login } from './components/Login';
 import { LevelTest } from './components/LevelTest';
 import { VocabularyExercises } from './components/VocabularyExercises';
 import { WritingExercises } from './components/WritingExercises';
+import { FluencyPDFPractice } from './components/FluencyPDFPractice';
 import { RequirementNotification, setNotificationCallback } from './components/RequirementNotification';
 import { AUDIO_CONFIG } from './constants';
 import { ArrowLeft, Send, Microphone, MicrophoneOff, Stop, Book, Logout, Play, Edit, Education, ChevronUp, ChevronDown } from '@carbon/icons-react';
@@ -29,6 +30,7 @@ const App: React.FC = () => {
   const [showLearningPath, setShowLearningPath] = useState(false);
   const [showExercises, setShowExercises] = useState(false);
   const [showWritingExercises, setShowWritingExercises] = useState(false);
+  const [showPDFPractice, setShowPDFPractice] = useState(false);
   const [studyMode, setStudyMode] = useState<'voice' | 'text'>('voice');
   const [conversationMode, setConversationMode] = useState<'free' | 'structured'>('free');
   const [textInput, setTextInput] = useState('');
@@ -521,9 +523,82 @@ const App: React.FC = () => {
                 <span>Praticar Escrita</span>
               </button>
             </div>
+
+            {/* Card de Preparação para Aula com PDF */}
+            <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Book size={24} className="text-red-700" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">Preparação para Aula</h3>
+                  <p className="text-sm text-gray-600">Pratique com o PDF da sua aula</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-4 border border-red-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-900">Como Funciona</span>
+                  </div>
+                  <ul className="space-y-1.5 text-xs text-gray-600">
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                      Envie o PDF da sua aula
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                      IA extrai conteúdo e vocabulário
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                      Pratique conversação baseada no tema
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                      Teste de vocabulário do PDF
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                      Teste de gramática do PDF
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                  <p className="text-xs text-purple-900">
+                    <strong>📚 Dica:</strong> PDFs salvos ficam disponíveis para revisão a qualquer momento!
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setHasStarted(true);
+                  setShowPDFPractice(true);
+                }}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-lg transform hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <Book size={20} />
+                <span>Preparar com PDF</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
+    );
+  }
+
+  // Renderizar FluencyPDFPractice se estiver ativo
+  if (showPDFPractice) {
+    return (
+      <FluencyPDFPractice
+        userLevel={stats.level}
+        onBack={() => {
+          setShowPDFPractice(false);
+          setHasStarted(false);
+        }}
+      />
     );
   }
 

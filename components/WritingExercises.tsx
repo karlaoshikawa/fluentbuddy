@@ -281,8 +281,8 @@ Return the ADJUSTED story as JSON:
   };
 
   const evaluateSummary = async () => {
-    if (!summary.trim() || summary.trim().split(/\s+/).length < 10) {
-      alert('Por favor, escreva um resumo com pelo menos 10 palavras.');
+    if (!summary.trim() || summary.trim().split(/\s+/).length < 3) {
+      alert('Escreva pelo menos 3 palavras mostrando que entendeu o texto.');
       return;
     }
 
@@ -308,33 +308,39 @@ Return the ADJUSTED story as JSON:
         return;
       }
       
-      const prompt = `You are an English teacher evaluating a student's summary of a text.
+      const prompt = `You are a friendly English teacher checking if a beginner student understood a text.
 
 Original Text:
 "${currentText.text}"
 
-Student's Summary:
+Student wrote:
 "${summary}"
 
 Student Level: ${currentText.level}
 
-Evaluate the summary based on:
-1. Comprehension: Did they understand the main ideas?
-2. Accuracy: Is the summary factually correct?
-3. Writing Quality: Grammar, vocabulary, and coherence
-4. Completeness: Did they cover the key points?
+IMPORTANT RULES:
+- The student ONLY needs to show they got the GENERAL IDEA of the text.
+- A few words like "It's about a girl who found a dog" is PERFECT. Score: 90+
+- Do NOT ask for details, names, specific events, or completeness.
+- Do NOT suggest adding more details in your feedback.
+- If the student captured the MAIN THEME/TOPIC, that's a high score.
+- Be encouraging and positive. This is a beginner exercise.
+- Only give low scores if the answer is completely wrong or unrelated.
 
-Provide a score from 0-100 and detailed feedback.
+Scoring:
+- 90-100: Got the general idea (e.g. "a girl found a dog" for a story about finding a dog)
+- 70-89: Somewhat related but vague
+- 0-69: Wrong or unrelated
 
-Return ONLY a valid JSON object (no markdown, no extra text):
+Return ONLY valid JSON (no markdown):
 {
   "score": number (0-100),
-  "feedback": "Overall feedback in Portuguese",
-  "strengths": ["strength 1 in Portuguese", "strength 2 in Portuguese"],
-  "improvements": ["improvement 1 in Portuguese", "improvement 2 in Portuguese"],
-  "correctedVersion": "A grammatically perfect version of their summary in English (only if there are errors)",
-  "keyPointsCovered": ["point 1", "point 2"],
-  "missedPoints": ["missed point 1", "missed point 2"]
+  "feedback": "1 short encouraging sentence in Portuguese",
+  "strengths": ["1 short positive point in Portuguese"],
+  "improvements": ["1 grammar tip ONLY if there are English errors, otherwise say 'Ótimo trabalho!'"],
+  "correctedVersion": "Fix grammar only if needed, otherwise empty string",
+  "keyPointsCovered": ["the main idea they got"],
+  "missedPoints": []
 }`;
 
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
@@ -612,22 +618,22 @@ Return ONLY a valid JSON object (no markdown, no extra text):
           {/* Step 3: Escrever resumo */}
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Passo 3: Escreva um resumo em inglês
+              Passo 3: Mostre que entendeu o texto
             </h3>
             <p className="text-gray-600 mb-4">
-              Escreva com suas próprias palavras o que você entendeu do texto (mínimo 5 palavras).
+              Escreva em poucas palavras (em inglês) o que você entendeu do texto. Não precisa copiar, só mostrar que entendeu a ideia.
             </p>
             <textarea
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
-              placeholder="Write your summary here in English..."
+              placeholder="What is this text about? Write in English..."
               className="w-full h-40 px-4 py-3 border-2 border-gray-300 rounded-lg resize-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
             />
             <div className="flex items-center justify-between mt-4">
               <div className="text-sm text-gray-500">
                 Palavras: {summary.trim().split(/\s+/).filter(w => w.length > 0).length}
-                {summary.trim().split(/\s+/).filter(w => w.length > 0).length < 5 && (
-                  <span className="text-red-500 ml-2">(mínimo 5)</span>
+                {summary.trim().split(/\s+/).filter(w => w.length > 0).length < 3 && (
+                  <span className="text-red-500 ml-2">(mínimo 3)</span>
                 )}
               </div>
               <div className="flex gap-3">
